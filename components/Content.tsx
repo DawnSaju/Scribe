@@ -1,10 +1,19 @@
 import Image from "next/image";
-import dynamic from "next/dynamic";
-import { use, useEffect, useState } from "react";
-const Wrapper = dynamic(() => import ("@/components/Wrapper"), { ssr: false });
-import { Platforms } from "@/components/ui/Platforms"
-import { Home, User, Briefcase, FileText } from 'lucide-react'
-import { Navbar } from "@/components/ui/mini-navbar"
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { Platforms } from "@/components/ui/Platforms";
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut"
+    }
+  }
+};
 
 const Logos = {
   netflix: () => (
@@ -70,47 +79,117 @@ const Logos = {
   ),
 };
 
-
-export default function Hero() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
+export default function Content() {
+  const [hasLoaded, setHasLoaded] = useState(false);
   const arr = [Logos.netflix, Logos.appleTV, Logos.primeVideo, Logos.youtube]
 
-  const navItems = [
-    { name: 'Home', url: '#', icon: Home },
-    { name: 'About', url: '#', icon: User },
-    { name: 'Projects', url: '#', icon: Briefcase },
-    { name: 'Resume', url: '#', icon: FileText }
-  ]
-
   useEffect(() => {
-    setHasMounted(true);
+    const timer = setTimeout(() => {
+      setHasLoaded(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  if (!hasMounted) {
-    return null;
-  }
-
   return (
-    <main>
-      {!isLoading && (
-          <>
-            <Navbar />
-            <Wrapper />
-            <div className="hidden lg:block flex justify-center items-center">
-              <Platforms>
-              {arr.map((Logo, index) => (
-                <div
-                  key={index}
-                  className="relative h-full w-fit mx-[2rem] flex items-center justify-center "
-                >
-                  <Logo />
+    <div className="w-full p-4 lg:p-0 mt-28 lg:mt-28 lg:py-38 lg:relative lg:bottom-40 p-4">
+      <section id="about">
+        <div className="flex justify-center items-center">
+          <div className="w-full max-w-6xl flex flex-col items-center">
+            {hasLoaded && (
+              <motion.div
+                className="flex flex-col justify-center items-center gap-12 sm:gap-16"
+                initial="hidden"
+                animate="visible"
+                variants={cardVariants}
+              >
+                <motion.div className="flex flex-col gap-4 text-center items-center px-2" variants={cardVariants}>
+                  <div className="p-4 flex flex-col gap-5 justify-center items-center">
+                    <h1 className="text-5xl lg:text-6xl font-medium font-['DM Sans'] leading-[54px] max-w-xl">
+                      Making every show a learning movement
+                    </h1>
+                    <h2 className="text-center justify-start text-color-blue-9 opacity-60 text-base w-9/10 lg:text-xl font-normal font-['DM_Sans'] leading-7 lg:w-6/10">
+                      Transforms your binge watching into a fun, effortless way to grow your English vocabulary one show at a time.
+                    </h2>
+                  </div>
+
+                  <motion.div className="flex justify-center items-center" variants={cardVariants}>
+                    <div className="inline-flex flex-col justify-start items-center">
+                      <button className="px-6 py-4 relative bg-gradient-to-r from-blue-300 to-blue-600 rounded-full flex justify-center items-center gap-3 overflow-hidden cursor-pointer">
+                        <a href="/" className="text-white text-base font-medium font-['DM_Sans'] leading-none">
+                          Start learning now
+                        </a>
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+                
+                <div className="block lg:hidden flex justify-center items-center">
+                    <Platforms>
+                    {arr.map((Logo, index) => (
+                    <div
+                        key={index}
+                        className="relative h-full w-fit mx-[2rem] flex items-center justify-center "
+                    >
+                        <Logo />
+                    </div>
+                    ))}
+                </Platforms>
                 </div>
-              ))}
-            </Platforms>
-            </div>
-          </>
-        )}
-    </main>
+
+                <div className="flex flex-col items-center gap-16 w-full">
+                  {[
+                    {
+                      title: "Capture words as you watch",
+                      desc: "Easily highlight and save unfamiliar words directly while watching your favorite shows no pausing or switching apps.",
+                      img: "blue"
+                    },
+                    {
+                      title: "Personal vocabulary journal",
+                      desc: "Every saved word is stored in your personal Scribe log, complete with definitions, context, and usage.",
+                      img: "teal"
+                    },
+                    {
+                      title: "Daily recaps & review mode",
+                      desc: "Get gentle daily reminders with your saved words and quick review quizzes to reinforce learning over time.",
+                      img: "pink"
+                    }
+                  ].map(({ title, desc, img }) => (
+                    <motion.div
+                      key={img}
+                      className="w-full flex flex-col items-center"
+                      variants={cardVariants}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, amount: 0.2 }}
+                    >
+                      <div className="w-full h-auto bg-stone-50 rounded-2xl overflow-hidden flex flex-col md:flex-row">
+                        <div className="flex flex-col md:flex-row justify-center items-center p-16 md:p-16 gap-6">
+                          <div className="flex flex-col justify-start items-start gap-5 text-left max-w-md">
+                            <h1 className="text-color-blue-9 text-3xl lg:text-5xl font-medium font-['DM_Sans']">
+                              {title}
+                            </h1>
+                            <p className="opacity-60 text-sm sm:text-base font-normal font-['DM_Sans'] leading-relaxed">
+                              {desc}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="w-full h-full flex justify-center">
+                          <img
+                            className="w-full max-w-xs sm:max-w-md object-contain"
+                            src={`./theme/${img}.png`}
+                            alt={`${img} theme`}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
