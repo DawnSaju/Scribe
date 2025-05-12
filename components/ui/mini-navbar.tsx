@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
 
 const AnimatedNavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
@@ -110,7 +111,9 @@ export function Navbar() {
                     transition-all duration-300 ease-out
                     group-hover:opacity-60 group-hover:blur-xl group-hover:-m-3"></div>
       <button className="relative z-10 px-4 py-2 sm:px-3 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-500 rounded-full hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-700 transition-all duration-200 w-full sm:w-auto">
-        Login
+        <Link href='/auth'>
+          Login
+        </Link>
       </button>
     </div>
   );

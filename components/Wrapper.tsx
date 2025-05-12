@@ -2,11 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import Spline from "@splinetool/react-spline";
+import Preloader from "@/components/Preloader";
 
 const Wrapper = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [hasMounted, setHasMounted] = useState(false);
+    const [isSplineReady, setIsSplineReady] = useState(false);
     const ref = useRef<HTMLDivElement | null>(null);
+    const splineRef = useRef<unknown>(null);
+    
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         setHasMounted(true);
@@ -19,8 +24,8 @@ const Wrapper = () => {
                 setIsVisible(entry.isIntersecting);
             },
             {
-                threshold: 0.5,
-                rootMargin: "200px 0px",
+                threshold: 0.1,
+                rootMargin: "400px 0px",
             }
         );
 
@@ -37,8 +42,27 @@ const Wrapper = () => {
         };
     }, []);
 
+    const handleSplineLoad = (splineApp: unknown) => {
+        console.log("Spline scene loaded");
+        splineRef.current = splineApp;
+
+        setIsSplineReady(true);
+
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 200);
+    };
+
     return (
         <div>
+            {isVisible && isLoading && (
+                <Preloader
+                    timeout={30000}
+                    waitForElement="#spline-scene canvas"
+                    waitTimeout={30000}
+                />
+            )}
+
             <div
                 ref={ref}
                 style={{
@@ -52,16 +76,23 @@ const Wrapper = () => {
                 className="hidden flex justify-center lg:block"
             >
                 {hasMounted && isVisible && (
-                    <Spline
-                        scene="https://draft.spline.design/Kn42jKCP6w2FAfR3/scene.splinecode"
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                        }}
-                    />
+                    <div 
+                        id="spline-scene"
+                        className={`transition-opacity duration-700 ease-in-out ${!isSplineReady || isLoading ? 'opacity-0' : 'opacity-100'}`}
+                        style={{ width: "100%", height: "100%" }}
+                    >
+                        <Spline
+                            scene="https://draft.spline.design/Kn42jKCP6w2FAfR3/scene.splinecode"
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                            }}
+                            onLoad={handleSplineLoad}
+                        />
+                    </div>
                 )}
             </div>
         </div>

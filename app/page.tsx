@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import FAQSection from "@/components/FAQSection";
 import { TestimonialsColumn } from "@/components/ui/Testimonials";
 import { motion } from "framer-motion";
+import Preloader from '@/components/Preloader';
 const Content = dynamic(() => import ("@/components/Content"), { ssr: false });
 const Hero = dynamic(() => import ("@/components/Hero"), { ssr: false });
 const Footer = dynamic(() => import ("@/components/Footer"), { ssr: false });
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
 
   const testimonials = [
@@ -113,6 +115,12 @@ export default function Home() {
   
   return (
     <main>
+      {isLoading && (
+        <Preloader finishLoading={() => setIsLoading(false)} timeout={2500} />
+      )}
+
+      {!isLoading && (
+      <>
       <Hero/>
       <Content/>
       <section className="bg-background relative py-16 lg:py-0">
@@ -145,6 +153,8 @@ export default function Home() {
       <section id="footer">
         <Footer/>
       </section>
+      </>
+      )}
     </main>
   )
 }
