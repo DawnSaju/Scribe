@@ -1,9 +1,7 @@
-import Image from "next/image";
 import dynamic from "next/dynamic";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 const Wrapper = dynamic(() => import ("@/components/Wrapper"), { ssr: false });
 import { Platforms } from "@/components/ui/Platforms"
-import { Home, User, Briefcase, FileText } from 'lucide-react'
 import { Navbar } from "@/components/ui/mini-navbar"
 
 const Logos = {
@@ -72,45 +70,37 @@ const Logos = {
 
 
 export default function Hero() {
-  const [isLoading, setIsLoading] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
-  const arr = [Logos.netflix, Logos.appleTV, Logos.primeVideo, Logos.youtube]
+  const [isLoading] = useState(false);
 
-  const navItems = [
-    { name: 'Home', url: '#', icon: Home },
-    { name: 'About', url: '#', icon: User },
-    { name: 'Projects', url: '#', icon: Briefcase },
-    { name: 'Resume', url: '#', icon: FileText }
-  ]
+  const logos = [Logos.netflix, Logos.appleTV, Logos.primeVideo, Logos.youtube];
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  if (!hasMounted) {
-    return null;
-  }
+  if (!hasMounted) return null;
 
   return (
     <main>
       {!isLoading && (
-          <>
-            <Navbar />
-            <Wrapper />
-            <div className="hidden lg:block flex justify-center items-center">
-              <Platforms>
-              {arr.map((Logo, index) => (
+        <>
+          <Navbar />
+          <Wrapper />
+          <div className="hidden lg:flex justify-center items-center">
+            <Platforms>
+              {logos.map((Logo, index) => (
                 <div
                   key={index}
-                  className="relative h-full w-fit mx-[2rem] flex items-center justify-center "
+                  className="relative h-full w-fit mx-[2rem] flex items-center justify-center"
                 >
                   <Logo />
                 </div>
               ))}
             </Platforms>
-            </div>
-          </>
-        )}
+          </div>
+        </>
+      )}
     </main>
   );
 }

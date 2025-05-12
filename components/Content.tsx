@@ -1,7 +1,7 @@
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Platforms } from "@/components/ui/Platforms";
+import Link from "next/link";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -116,9 +116,9 @@ export default function Content() {
                   <motion.div className="flex justify-center items-center" variants={cardVariants}>
                     <div className="inline-flex flex-col justify-start items-center">
                       <button className="px-6 py-4 relative bg-gradient-to-r from-blue-300 to-blue-600 rounded-full flex justify-center items-center gap-3 overflow-hidden cursor-pointer">
-                        <a href="/" className="text-white text-base font-medium font-['DM_Sans'] leading-none">
+                        <Link href="/" className="text-white text-base font-medium font-['DM_Sans'] leading-none">
                           Start learning now
-                        </a>
+                        </Link>
                       </button>
                     </div>
                   </motion.div>

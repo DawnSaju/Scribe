@@ -3,16 +3,10 @@ import { cn } from "@/lib/utils"
 
 interface PlatformProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
-  pauseOnHover?: boolean
-  direction?: "left" | "right"
-  speed?: number
 }
 
 export function Platforms({
   children,
-  pauseOnHover = false,
-  direction = "left",
-  speed = 30,
   className,
   ...props
 }: PlatformProps) {

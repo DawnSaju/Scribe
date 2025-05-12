@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type FAQItem = {
   question: string;
@@ -25,7 +24,7 @@ const faqData: FAQItem[] = [
     question: "What is the 'Personal Vocabulary Journal'?",
     answer: (
       <div>
-        It's your dedicated space where all the words you've captured are stored. Each word entry includes:
+        It&apos;s your dedicated space where all the words you&apos;ve captured are stored. Each word entry includes:
         <ul className="list-disc list-inside mt-2 space-y-1">
           <li>Definition and pronunciation audio</li>
           <li>The original context from the show</li>

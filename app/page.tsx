@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import dynamic from "next/dynamic";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import FAQSection from "@/components/FAQSection";
 import { TestimonialsColumn } from "@/components/ui/Testimonials";
 import { motion } from "framer-motion";
@@ -11,7 +10,6 @@ const Hero = dynamic(() => import ("@/components/Hero"), { ssr: false });
 const Footer = dynamic(() => import ("@/components/Footer"), { ssr: false });
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
 
   const testimonials = [
