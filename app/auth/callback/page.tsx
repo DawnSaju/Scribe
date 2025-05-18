@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
@@ -30,7 +32,7 @@ const CallbackPage = () => {
 
         const user = sessionData.session.user;
         const hasOnboarded = user.user_metadata?.has_onboarded;
-        
+
         localStorage.setItem('user', JSON.stringify(user));
 
         if (hasOnboarded === undefined) {
