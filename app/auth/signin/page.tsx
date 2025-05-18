@@ -6,7 +6,7 @@ import { Mail, Lock, Quote } from 'lucide-react';
 import { supabase } from '@/utils/supabase/client';
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
-import { RiFacebookFill, RiGithubFill, RiGoogleFill, RiTwitterXFill } from "@remixicon/react";
+import { RiGithubFill, RiGoogleFill } from "@remixicon/react";
 
 export default function LoginPage() {
   const router = useRouter();

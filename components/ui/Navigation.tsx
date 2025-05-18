@@ -67,7 +67,7 @@ export default function Navigation() {
       <div className="pt-4">
         <div className="rounded-md border border-border p-3">
           <div className="mb-1 text-xs font-medium">Streak</div>
-          <div className="text-lg font-semibold">7 days</div>
+          <div className="text-lg font-semibold">0 days</div>
           <div className="mt-1 text-xs text-muted-foreground">Keep learning to extend your streak!</div>
         </div>
       </div>

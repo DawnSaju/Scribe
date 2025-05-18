@@ -30,6 +30,8 @@ const CallbackPage = () => {
 
         const user = sessionData.session.user;
         const hasOnboarded = user.user_metadata?.has_onboarded;
+        
+        localStorage.setItem('user', JSON.stringify(user));
 
         if (hasOnboarded === undefined) {
           const { error: updateError } = await supabase.auth.updateUser({

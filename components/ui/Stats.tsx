@@ -13,8 +13,8 @@ export default function StatsPanel() {
           <CardTitle className="text-sm font-medium">Words Learned Today</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">24</div>
-          <div className="text-xs text-muted-foreground">+6 from yesterday</div>
+          <div className="text-2xl font-bold">NaN</div>
+          <div className="text-xs text-muted-foreground">0 from yesterday</div>
         </CardContent>
       </Card>
 
@@ -23,8 +23,8 @@ export default function StatsPanel() {
           <CardTitle className="text-sm font-medium">Total Vocabulary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">1,235</div>
-          <div className="text-xs text-muted-foreground">You're in the top 15%</div>
+          <div className="text-2xl font-bold">NaN</div>
+          <div className="text-xs text-muted-foreground">Stats</div>
         </CardContent>
       </Card>
 
@@ -34,18 +34,18 @@ export default function StatsPanel() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs">New words</span>
-          <span className="text-xs font-medium">15/20</span>
+          <span className="text-xs font-medium">0/20</span>
         </div>
         <div className="h-2 rounded-full bg-secondary">
-          <div className="h-2 w-3/4 rounded-full bg-primary"></div>
+          <div className="h-2 w-1 rounded-full bg-primary"></div>
         </div>
 
         <div className="flex items-center justify-between">
           <span className="text-xs">Reviews</span>
-          <span className="text-xs font-medium">32/50</span>
+          <span className="text-xs font-medium">0/50</span>
         </div>
         <div className="h-2 rounded-full bg-secondary">
-          <div className="h-2 w-3/5 rounded-full bg-primary"></div>
+          <div className="h-2 w-1 rounded-full bg-primary"></div>
         </div>
       </div>
     </div>
