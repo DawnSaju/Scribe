@@ -1,10 +1,10 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
+
+export const dynamic = 'force-dynamic';
 
 const CallbackPage = () => {
   const searchParams = useSearchParams();
@@ -65,4 +65,10 @@ const CallbackPage = () => {
   return null;
 };
 
-export default CallbackPage;
+export default function SuspenseCallbackPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CallbackPage />
+    </Suspense>
+  );
+}
