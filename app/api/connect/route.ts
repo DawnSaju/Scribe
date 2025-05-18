@@ -1,22 +1,26 @@
-import { supabase } from '@/utils/supabase/client';
 import { NextResponse } from 'next/server';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
-export async function POST(req: Request) {
-    if (req.method !== "POST") {
-        return NextResponse.json({ error:"Method not allowed" }, { status: 500 });
-    }
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    const { error: updateError } = await supabase.auth.updateUser({
-        data: {
-            isConnected: true,
-        },
-    });
+export async function POST() {
+  const supabase = createServerComponentClient({ cookies });
 
-    if (updateError) {
-        return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
-    
-    return NextResponse.json({ userId: user?.id });
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: userError?.message || 'No user found' }, { status: 401 });
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    data: { isConnected: true },
+  });
+
+  if (updateError) {
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ userId: user.id });
 }
