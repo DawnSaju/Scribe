@@ -82,7 +82,7 @@ const Wrapper = () => {
                         style={{ width: "100%", height: "100%" }}
                     >
                         <Spline
-                            scene="https://draft.spline.design/Kn42jKCP6w2FAfR3/scene.splinecode"
+                            scene="https://prod.spline.design/fDkq6ozVP2j8Eqyv/scene.splinecode"
                             style={{
                                 width: "100%",
                                 height: "100%",
