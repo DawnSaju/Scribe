@@ -20,7 +20,7 @@ export default function MobileNav() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background p-2 md:hidden">
       <div className="flex items-center justify-around">
-        <Link href="/" className="flex flex-col items-center p-2 text-foreground hover:text-primary">
+        <Link href="/dashboard" className="flex flex-col items-center p-2 text-foreground hover:text-primary">
           <Home size={20} />
           <span className="text-xs mt-1">Home</span>
         </Link>

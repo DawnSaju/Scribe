@@ -28,7 +28,7 @@ export default function Navigation() {
         
         <nav className="space-y-1">
           <Button variant="ghost" className="w-full justify-start gap-3" asChild>
-            <Link href="/">
+            <Link href="/dashboard">
               <Home size={18} />
               <span>Dashboard</span>
             </Link>

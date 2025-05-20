@@ -1,4 +1,3 @@
-// middleware.ts
 import { NextResponse, NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
@@ -14,13 +13,10 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          response.cookies.set(name, value, options); 
+          response.cookies.set(name, value, options);
         },
         remove(name: string, options: CookieOptions) {
-          response.cookies.set(name, '', {
-            ...options,
-            maxAge: 0,
-          });
+          response.cookies.set(name, '', { ...options, maxAge: 0 });
         },
       },
     }
@@ -32,7 +28,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (request.nextUrl.pathname.startsWith('/app') && (!user || error)) {
-    const loginUrl = new URL('/auth/login', request.url);
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/auth/signin';
+    loginUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 
