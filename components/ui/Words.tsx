@@ -334,7 +334,7 @@ export default function Words() {
       `https://www.omdbapi.com/?t=${encodeURIComponent(showName)}&apikey=7c57638d`
     );
     const data = await res.json();
-    console.log("DATA FROM THE POSTER API", data)
+    // console.log("DATA FROM THE API", data)
 
     if (data.Response === "True" && data.Poster && data.Poster !== "N/A") {
       setPosterUrl(data.Poster); 

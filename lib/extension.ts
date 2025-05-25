@@ -114,17 +114,19 @@ export class ExtensionConnector {
 
   static listenForWordMessages(callback: (word: Word) => void): () => void {
     const handler = (event: MessageEvent) => {
-        if (event.source !== window || event.data?.source !== 'chrome-extension') return;
+        if (event.source !== window || event.data?.source !== 'chrome-extension' || event.data?.type !== 'WORD_DATA') return;
 
-        if (event.data?.type === 'WORD_DATA') {
-            const word = event.data.word as Word;
-            console.log('Got WORD_DATA from extension:', word);
-            callback(word);
-        }
+        if (
+          !event.data.extensionId ||
+          event.data.extensionId !== this._extensionId
+        ) return;
+
+        const word = event.data.word as Word;
+        console.log('Got WORD_DATA from extension:', word);
+        callback(word);
     };
 
     window.addEventListener('message', handler);
-
     return () => window.removeEventListener('message', handler);
   }
 
