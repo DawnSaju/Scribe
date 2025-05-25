@@ -85,7 +85,7 @@ export default function Words() {
   const [extensionAvailable, setExtensionAvailable] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [modalType, setModalType] = useState<'install' | 'manage'>('install');
-  const [posterUrl, setPosterUrl] = useState<string | null>(null);
+  const [thumbnailUrl, setthumbnailUrl] = useState<{ [key: string]: string | null }>({});
   const [openPlatforms, setOpenPlatforms] = useState(false);
   const [copied, setCopied] = useState(false);
   const [currentStep, setcurrentStep] = useState(1);
@@ -327,21 +327,20 @@ export default function Words() {
     }
   };
 
-  async function getShowPoster(showName: string, season: number, episode: number) {
-    void season;
-    void episode;
-    const res = await fetch(
-      `https://www.omdbapi.com/?t=${encodeURIComponent(showName)}&apikey=7c57638d`
-    );
-    const data = await res.json();
-    // console.log("DATA FROM THE API", data)
+  async function getShowThumbnail(showName: string, season: number, episode: number) {
+     const key = `${showName}_${season}_${episode}`;
+     if (thumbnailUrl[key]) return; 
 
-    if (data.Response === "True" && data.Poster && data.Poster !== "N/A") {
-      setPosterUrl(data.Poster); 
-    } else {
-      setPosterUrl(null);
-    }
-  }
+     const res = await fetch(
+       `https://www.omdbapi.com/?t=${encodeURIComponent(showName)}&apikey=7c57638d`
+     );
+     const data = await res.json();
+
+     setthumbnailUrl(prev => ({
+       ...prev,
+       [key]: (data.Response === "True" && data.Poster && data.Poster !== "N/A") ? data.Poster : null
+     }));
+   }
 
   const getTourClasses = (targetName: string) => {
     return showWalkthrough && walkthroughSteps[tourStep].target === targetName 
@@ -350,17 +349,47 @@ export default function Words() {
   };
 
   useEffect(() => {
-    const unsubscribe = ExtensionConnector.listenForWordMessages((word) => {
+    const unsubscribe = ExtensionConnector.listenForWordMessages(async (word) => {
       console.log('[page.tsx] Got word from extension:', word);
       setUserWords(prev => [...prev, word]);
-      getShowPoster(word.show_name, word.season, word.episode);
-      console.log(posterUrl)
+      const { data: user, error: userError } = await supabase.auth.getUser();
+
+      if (userError || userData?.user?.id) {
+        console.error("Failed to get current user:",userError?.message);
+        return;
+      }
+      
+      const { error: insertError } = await supabase.from("learned_words").upsert({
+          user_id: user.user.id,
+          word: word.word,
+          part_of_speech: word.part_of_speech,
+          definition: word.definition,
+          example: word.example,
+          show_name: word.show_name,
+          platform: word.platform,
+          season: word.season,
+          episode: word.episode,
+      })
+
+      if (insertError){
+        console.error("Failed to insert word data");
+        return;
+      }
+
+      getShowThumbnail(word.show_name, word.season, word.episode);
+      console.log(thumbnailUrl)
     });
 
     return () => {
       unsubscribe();
     };
   }, []);
+
+    useEffect(() => {
+    userWords.forEach(word => {
+      getShowThumbnail(word.show_name, word.season, word.episode);
+    });
+  }, [userWords]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -532,6 +561,17 @@ export default function Words() {
     setModalOpen(true);
   };
 
+  const handleRemoveWord = async (id: string) => {
+    setUserWords(prev => prev.filter(word => word.id !== id));
+    const { error } = await supabase
+    .from('learned_words')
+    .delete()
+    .eq('id', id);
+    if (error) {
+      console.error('Error removing the word:', error.message);
+    }
+  }
+
   const step3 = async () => {
     setIsConnecting(true);
     try {
@@ -698,106 +738,110 @@ export default function Words() {
         ) : userWords.length > 0 ? (
           <div className="space-y-3 pb-6">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-8">
-              {userWords.map((word) => (
-                <div 
-                  key={word.id}
-                  className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="relative aspect-video">
-                    {posterUrl ? (
-                      <Image
-                        src={posterUrl}
-                        alt={word.show_name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                        <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
-                      </div>
-                    )}
-                    
-                    {word.platform && (
-                      <div className="absolute right-3 top-3 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                        <PlatformIcon platform={word.platform} className="h-5 w-5" />
-                      </div>
-                    )}
-                    
-                    <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                      <Tv2 className="h-3.5 w-3.5 mr-1" />
-                      S{word.season} • E{word.episode}
-                    </Badge>
-                  </div>
-
-                  <div className="p-5">
-                    <div className="flex justify-between items-start gap-3 mb-3">
-                      <div>
-                        <h3 className="text-xl font-semibold tracking-tight line-clamp-1">
-                          {word.word}
-                          {word.is_new && (
-                            <span className="ml-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                          )}
-                        </h3>
-                        <p className="text-sm text-muted-foreground capitalize mt-1">
-                          {word.part_of_speech}
-                        </p>
-                      </div>
+              {userWords.map((word) => {
+                const thumbmailkey = `${word.show_name}_${word.season}_${word.episode}`;
+                const thumbnailUri = thumbnailUrl[thumbmailkey];
+                return (
+                  <div 
+                    key={word.id}
+                    className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <div className="relative aspect-video">
+                      {thumbnailUri ? (
+                        <Image
+                          src={thumbnailUri}
+                          alt={word.show_name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                          <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
+                        </div>
+                      )}
                       
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9 rounded-full -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl w-48">
-                          <DropdownMenuItem className="gap-2">
-                            <Bookmark className="h-4 w-4" />
-                            Save to collection
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2">
-                            <MessageSquare className="h-4 w-4" />
-                            Add note
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator/>
-                          <DropdownMenuItem className="gap-2 text-red-500">
-                            <Trash2 className="h-4 w-4" />
-                            Remove
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {word.platform && (
+                        <div className="absolute right-3 top-3 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                          <PlatformIcon platform={word.platform} className="h-5 w-5" />
+                        </div>
+                      )}
+                      
+                      <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
+                        <Tv2 className="h-3.5 w-3.5 mr-1" />
+                        S{word.season} • E{word.episode}
+                      </Badge>
                     </div>
 
-                    <p className="text-sm line-clamp-2 mb-3">{word.definition}</p>
-                    
-                    {word.example && (
-                      <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">
-                        &quot;{word.example}&quot;
+                    <div className="p-5">
+                      <div className="flex justify-between items-start gap-3 mb-3">
+                        <div>
+                          <h3 className="text-xl font-semibold tracking-tight line-clamp-1">
+                            {word.word}
+                            {word.is_new && (
+                              <span className="ml-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                            )}
+                          </h3>
+                          <p className="text-sm text-muted-foreground capitalize mt-1">
+                            {word.part_of_speech}
+                          </p>
+                        </div>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-9 w-9 rounded-full -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl w-48">
+                            <DropdownMenuItem className="gap-2">
+                              <Bookmark className="h-4 w-4" />
+                              Save to collection
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              Add note
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator/>
+                            <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord(word.id)}>
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                    )}
 
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate max-w-[120px]">
-                          {word.show_name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        <span className="text-xs">
-                          {new Date(Date.now()).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
+                      <p className="text-sm line-clamp-2 mb-3">{word.definition}</p>
+                      
+                      {word.example && (
+                        <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">
+                          &quot;{word.example}&quot;
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium truncate max-w-[120px]">
+                            {word.show_name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {new Date(Date.now()).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         ) : (extensionId && connected && extensionAvailable) ? (
