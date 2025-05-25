@@ -354,7 +354,7 @@ export default function Words() {
       setUserWords(prev => [...prev, word]);
       const { data: user, error: userError } = await supabase.auth.getUser();
 
-      if (userError || user?.user?.id) {
+      if (userError) {
         console.error("Failed to get current user:",userError?.message);
         return;
       }
