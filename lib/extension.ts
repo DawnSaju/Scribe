@@ -82,11 +82,23 @@ export class ExtensionConnector {
 
     try {
       const response: MessageResponse = await new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-          this._extensionId,
-          { type: 'CONNECT_REQUEST', force },
-          resolve
-        );
+        try {
+          chrome.runtime.sendMessage(
+            this._extensionId,
+            { type: 'CONNECT_REQUEST', force },
+            resolve
+          );
+        } catch (err) {
+          if (
+            err instanceof Error &&
+            err.message &&
+            err.message.includes('Invalid extension id')
+          ) {
+            resolve(null);
+            return;
+          }
+          throw err;
+        }
       });
 
       if (response && 'permanentDisconnect' in response) {

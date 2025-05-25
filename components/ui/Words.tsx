@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, Fragment } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/utils/supabase/client";
@@ -328,6 +328,8 @@ export default function Words() {
   };
 
   async function getShowPoster(showName: string, season: number, episode: number) {
+    void season;
+    void episode;
     const res = await fetch(
       `https://www.omdbapi.com/?t=${encodeURIComponent(showName)}&apikey=7c57638d`
     );
@@ -400,7 +402,7 @@ export default function Words() {
 
   useEffect(() => {
     const loadExtensionId = async () => {
-      let storedId = typeof window !== 'undefined' ? localStorage.getItem('extensionId') : null;
+      const storedId = typeof window !== 'undefined' ? localStorage.getItem('extensionId') : null;
       if (storedId && storedId.trim() !== '') {
         setExtensionId(storedId);
         ExtensionConnector.setExtensionId(storedId);
@@ -444,7 +446,7 @@ export default function Words() {
         variant: "default",
       });
       localStorage.removeItem("extensionId")
-    } catch (error) {
+    } catch {
       console.log({
         title: "Removal Failed",
         description: "Couldn't remove the extension",
@@ -530,25 +532,12 @@ export default function Words() {
     setModalOpen(true);
   };
 
-  const step2 = () => {
-    setInstallGuide(2);
-    setTimeout(() => setInstallGuide(3), 2000);
-  }
-
-  // const step3 = async () => {
-  //   setIsConnecting(true);
-  //   try {
-  //     await handleConnect();
-  //   } finally {
-  //     setIsConnecting(false);
-  //   }
-  // }
   const step3 = async () => {
     setIsConnecting(true);
     try {
       handleConnect();
       await handleNextStep(3);
-    } catch (error) {
+    } catch {
       setConnectionError(true);
     } finally {
       setIsConnecting(false);
@@ -786,7 +775,7 @@ export default function Words() {
                     
                     {word.example && (
                       <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">
-                        "{word.example}"
+                        &quot;{word.example}&quot;
                       </div>
                     )}
 
@@ -930,7 +919,7 @@ export default function Words() {
               </div>
               <h4 className="font-medium text-lg">More Coming</h4>
               <p className="text-sm text-muted-foreground text-center mt-2">
-                We're adding new platforms regularly
+                We&quot;re adding new platforms regularly
               </p>
             </div>
           </div>
@@ -1144,19 +1133,74 @@ export default function Words() {
                           {step.title}
                         </h3>
                         <p className="text-muted-foreground mt-1">{step.description}</p>
-                        {installGuide === 3 && step.id === 3 && (
+                        {installGuide === step.id && (
                           <div className="mt-4">
-                            <Label htmlFor="extension-id" className="mb-1 block">Extension ID</Label>
-                            <Input
-                              id="extension-id"
-                              placeholder="Paste your extension ID here"
-                              value={extensionId}
-                              onChange={e => setExtensionId(e.target.value)}
-                              className="mb-2"
-                              autoFocus
-                            />
-                            {extensionId === '' && (
-                              <div className="text-xs text-destructive">Extension ID is required to connect.</div>
+                            {step.id === 1 && (
+                              <>
+                                <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm text-green-400">
+                                  <p>git clone https://github.com/DawnSaju/Scribe-Extension.git</p>
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="mt-3"
+                                  onClick={() => handleCopy("git clone https://github.com/DawnSaju/Scribe-Extension.git")}
+                                >
+                                  Copy
+                                </Button>
+                              </>
+                            )}
+                            {step.id === 2 && (
+                              <div className="space-y-3 mt-3">
+                                <div className="flex items-start gap-3">
+                                  <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">1</span>
+                                  <div>
+                                    <p className="text-sm">Open Chrome and go to:</p>
+                                    <p className="text-sm font-mono bg-accent px-2 py-1 rounded mt-1">chrome://extensions</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                  <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">2</span>
+                                  <p className="text-sm">Enable <span className="font-semibold">Developer mode</span> (toggle in top right)</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                  <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">3</span>
+                                  <p className="text-sm">Click <span className="font-semibold">Load unpacked</span> and select the cloned folder</p>
+                                </div>
+                              </div>
+                            )}
+                            {step.id === 3 && (
+                              <>
+                                <div className="space-y-3 mt-3">
+                                  <div className="flex items-start gap-3">
+                                    <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">1</span>
+                                    <p className="text-sm">Pin the extension to your toolbar (click the puzzle icon in Chrome)</p>
+                                  </div>
+                                  <div className="flex items-start gap-3">
+                                    <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">2</span>
+                                    <p className="text-sm">Click the extension icon and select <span className="font-semibold">Connect</span></p>
+                                  </div>
+                                </div>
+                                <div className="mt-4">
+                                  <Label htmlFor="extension-id" className="mb-1 block">Extension ID</Label>
+                                  <Input
+                                    id="extension-id"
+                                    placeholder="Paste your extension ID here"
+                                    value={extensionId}
+                                    onChange={e => {
+                                      setExtensionId(e.target.value);
+                                      setConnected(false);
+                                      setExtensionAvailable(false);
+                                      setConnectionError(false);
+                                    }}
+                                    className="mb-2"
+                                    autoFocus
+                                  />
+                                  {extensionId === '' && (
+                                    <div className="text-xs text-destructive">Extension ID is required to connect.</div>
+                                  )}
+                                </div>
+                              </>
                             )}
                           </div>
                         )}
