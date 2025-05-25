@@ -350,11 +350,11 @@ export default function Words() {
 
   useEffect(() => {
     const unsubscribe = ExtensionConnector.listenForWordMessages(async (word) => {
-      console.log('[page.tsx] Got word from extension:', word);
+      console.log('Got word from extension:', word);
       setUserWords(prev => [...prev, word]);
       const { data: user, error: userError } = await supabase.auth.getUser();
 
-      if (userError || userData?.user?.id) {
+      if (userError || user?.user?.id) {
         console.error("Failed to get current user:",userError?.message);
         return;
       }
