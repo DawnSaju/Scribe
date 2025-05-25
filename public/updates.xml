@@ -1,0 +1,5 @@
+<gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
+  <app appid="ifnfaiaoogbnkdefgihacicpijcakglg">
+    <updatecheck codebase="https://scribe-eosin-seven.vercel.app/api/updateExtension" version="1.0.0" />
+  </app>
+</gupdate>

@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
   // Protect /app routes
   if (request.nextUrl.pathname.startsWith('/app') && (!user || error)) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/auth/login';
+    loginUrl.pathname = '/auth/signin';
     loginUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
