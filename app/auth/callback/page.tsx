@@ -36,15 +36,15 @@ const CallbackPage = () => {
         localStorage.setItem('user', JSON.stringify(user));
 
         if (hasOnboarded === undefined) {
-          const { error: updateError } = await supabase.auth.updateUser({
+          supabase.auth.updateUser({
             data: { has_onboarded: false }
+          }).then(({ error: updateError }) => {
+            if (updateError) {
+              console.error('Failed to update user metadata:', updateError.message);
+            }
           });
-
-          if (updateError) {
-            console.error('Failed to update user metadata:', updateError.message);
-          }
-
           router.push('/onboarding');
+          return;
         } else {
           router.push(hasOnboarded ? '/dashboard' : '/onboarding');
         }

@@ -30,6 +30,7 @@ import {
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
@@ -406,27 +407,42 @@ export default function Words() {
   }, []);
 
   useEffect(() => {
+    let channel: RealtimeChannel | null = null;
+    let isCancelled = true;
     const getWords = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data, error } = await supabase
-          .from('learned_words')
-          .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, is_new')
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error fetching learned words:', error.message);
-        } else {
-          setUserWords(data || []);
-        }
-      } else {
-        console.log('User not authenticated');
-      }
-      setLoading(false);
+      if (!user) return;
+      const { data } = await supabase
+        .from('learned_words')
+        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, is_new')
+        .eq('user_id', user.id);
+      if (isCancelled && data) setUserWords(data);
+      channel = supabase
+        .channel('learned_words_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'learned_words', filter: `user_id=eq.${user.id}` },
+          payload => {
+            setUserWords(prev => {
+                if (payload.eventType === 'INSERT') {
+                    return [...prev, payload.new as Word];
+                } else if (payload.eventType === 'UPDATE') {
+                    return prev.map(w => w.id === payload.new.id ? payload.new as Word : w);
+                } else if (payload.eventType === 'DELETE') {
+                    return prev.filter(w => w.id !== (payload.old as Word).id);
+                }
+                return prev;
+            });
+          }
+        )
+        .subscribe();
+        setLoading(false);
     };
-
     getWords();
+    return () => {
+      isCancelled = false;
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -562,7 +578,6 @@ export default function Words() {
   };
 
   const handleRemoveWord = async (id: string) => {
-    setUserWords(prev => prev.filter(word => word.id !== id));
     const { error } = await supabase
     .from('learned_words')
     .delete()
@@ -650,14 +665,16 @@ export default function Words() {
             Continue your learning journey
           </p>
         </div>
-        <Button 
-          variant="outline"
-          onClick={handleInstallClick}
-          className="w-full sm:w-auto"
-        >
-          <ChromeIcon className="mr-2 h-4 w-4" />
-          {extensionAvailable ? 'Manage Extension' : 'Install Extension'}
-        </Button>
+        <div className="flex flex-row gap-4">
+          <Button 
+            variant="outline"
+            onClick={handleInstallClick}
+            className="w-full sm:w-auto"
+          >
+            <ChromeIcon className="mr-2 h-4 w-4" />
+            {extensionAvailable ? 'Manage Extension' : 'Install Extension'}
+          </Button>
+        </div>
       </div>
 
       <div 
