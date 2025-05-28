@@ -24,7 +24,6 @@ export default function Sidebar() {
       const { data, error } = await supabase.auth.getUser();
       if (data?.user) {
         setUserData(data.user as unknown as UserData);
-        console.log(data?.user)
       } else {
         console.error(error);
       }
