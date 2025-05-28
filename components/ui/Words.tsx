@@ -91,6 +91,7 @@ export default function Words() {
   const [copied, setCopied] = useState(false);
   const [currentStep, setcurrentStep] = useState(1);
   const [extensionId, setExtensionId] = useState('');
+  const [streak, setStreak] = useState(0);
 
   const guide = [
     {
@@ -352,7 +353,6 @@ export default function Words() {
   useEffect(() => {
     const unsubscribe = ExtensionConnector.listenForWordMessages(async (word) => {
       console.log('Got word from extension:', word);
-      setUserWords(prev => [...prev, word]);
       const { data: user, error: userError } = await supabase.auth.getUser();
 
       if (userError) {
@@ -404,6 +404,48 @@ export default function Words() {
     };
 
     checkUser();
+  }, []);
+
+  useEffect(() => {
+    const streak = async () => {
+      const { data: { user }} = await supabase.auth.getUser();
+      if (!user) {
+        return;
+      }
+
+      const today = new Date();
+      const prevSignin = user.user_metadata?.prev_signin_date ? new Date(user.user_metadata.prev_signin_date) : null;
+      let newStreak = user.user_metadata?.streakCount || 0;
+      let update = false;
+
+      if (!prevSignin) {
+        newStreak = 1;
+        update = true;
+      } else {
+        const days = Math.floor((today.setHours(0,0,0,0) - prevSignin.setHours(0,0,0,0)) / (1000 * (60**2) * 24));
+        if (days === 0) {
+
+        } else if (days === 1) {
+          newStreak += 1;
+          update = false;
+        } else if (days > 1) {
+          newStreak = 1;
+          update = true
+        }
+      }
+
+      setStreak(newStreak);
+      if (update) {
+        await supabase.auth.updateUser({
+          data: {
+            ...user.user_metadata,
+            prev_signin_date: today.toISOString(),
+            streakCount: newStreak,
+          }
+        });
+      }
+    }
+    streak();
   }, []);
 
   useEffect(() => {
@@ -578,6 +620,7 @@ export default function Words() {
   };
 
   const handleRemoveWord = async (id: string) => {
+    setUserWords(prev => prev.filter(word => word.id !== id));
     const { error } = await supabase
     .from('learned_words')
     .delete()
@@ -697,7 +740,7 @@ export default function Words() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Current Streak</CardDescription>
-            <CardTitle className="text-2xl">0 days</CardTitle>
+            <CardTitle className="text-2xl">{streak} day{streak== 1 ? '' : 's'}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">Keep going!</p>

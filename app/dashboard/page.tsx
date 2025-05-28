@@ -3,7 +3,7 @@ import React from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import Navigation from "@/components/ui/Navigation";
 import Words from "@/components/ui/Words";
-import Stats from "@/components/ui/Stats";
+import Sidebar from "@/components/ui/Siderbar";
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,7 @@ export default function Dashboard() {
       <DashboardLayout
         left={<Navigation />}
         mainContent={<Words/>}
-        right={<Stats />}
+        right={<Sidebar />}
       />
     </div>
   );
