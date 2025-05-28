@@ -655,7 +655,7 @@ export default function Words() {
     }
   };
 
-  const toggleSelect = (id: string) => {
+  const selectWord = (id: string) => {
     setSelected(prev => prev.includes(id) ? prev.filter(wid => wid !== id) : [...prev, id]);
   };
 
@@ -663,7 +663,9 @@ export default function Words() {
   const closegroupModal = () => setShowgroupModal(false);
 
   const addTogroup = () => {
-    if (!groupInput.trim() || selected.length === 0) return;
+    if (!groupInput.trim() || selected.length === 0) {
+      return;
+    }
     const words = userWords.filter(w => selected.includes(w.id));
     setgroups(prev => [...prev, { name: groupInput.trim(), words }]);
     setSelected([]);
@@ -916,8 +918,8 @@ export default function Words() {
                     role="checkbox"
                     aria-checked={isSelected}
                     tabIndex={0}
-                    onClick={() => toggleSelect(word.id)}
-                    onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') toggleSelect(word.id); }}
+                    onClick={() => selectWord(word.id)}
+                    onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') selectWord(word.id); }}
                     className={`relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer select-none ${isSelected ? 'border-2 border-primary ring-2 ring-primary' : ''}`}
                     key={word.id}
                   >
