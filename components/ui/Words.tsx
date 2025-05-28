@@ -92,6 +92,10 @@ export default function Words() {
   const [currentStep, setcurrentStep] = useState(1);
   const [extensionId, setExtensionId] = useState('');
   const [streak, setStreak] = useState(0);
+  const [groups, setgroups] = useState<{ name: string; words: Word[] }[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [showgroupModal, setShowgroupModal] = useState(false);
+  const [groupInput, setgroupInput] = useState("");
 
   const guide = [
     {
@@ -159,7 +163,7 @@ export default function Words() {
       target: "stats-section",
     },
     {
-      title: "Your Word Collection",
+      title: "Your Word group",
       content: "All words you save will appear here for review.",
       target: "words-section",
     },
@@ -414,7 +418,7 @@ export default function Words() {
       }
 
       const today = new Date();
-      const prevSignin = user.user_metadata?.prev_signin_date ? new Date(user.user_metadata.prev_signin_date) : null;
+      const prevSignin = user.user_metadata?.last_sign_in_at ? new Date(user.user_metadata.last_sign_in_at) : null;
       let newStreak = user.user_metadata?.streakCount || 0;
       let update = false;
 
@@ -439,7 +443,7 @@ export default function Words() {
         await supabase.auth.updateUser({
           data: {
             ...user.user_metadata,
-            prev_signin_date: today.toISOString(),
+            last_sign_in_at: today.toISOString(),
             streakCount: newStreak,
           }
         });
@@ -619,8 +623,17 @@ export default function Words() {
     setModalOpen(true);
   };
 
-  const handleRemoveWord = async (id: string) => {
-    setUserWords(prev => prev.filter(word => word.id !== id));
+  const handleRemoveWord = async (type: string, id: string) => {
+    setSelected(prev => prev.filter(selectedId => selectedId !== id));
+
+    if (type === "grid") {
+      setUserWords(prev => prev.filter(word => word.id !== id));
+    } else if (type == "group") {
+      setgroups(prev => prev.map(col => ({
+        ...col,
+        words: col.words.filter(word => word.id !== id)
+      })));
+    }
     const { error } = await supabase
     .from('learned_words')
     .delete()
@@ -641,6 +654,23 @@ export default function Words() {
       setIsConnecting(false);
     }
   };
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(wid => wid !== id) : [...prev, id]);
+  };
+
+  const opengroupModal = () => setShowgroupModal(true);
+  const closegroupModal = () => setShowgroupModal(false);
+
+  const addTogroup = () => {
+    if (!groupInput.trim() || selected.length === 0) return;
+    const words = userWords.filter(w => selected.includes(w.id));
+    setgroups(prev => [...prev, { name: groupInput.trim(), words }]);
+    setSelected([]);
+    setgroupInput("");
+    setShowgroupModal(false);
+  };
+
   return (
     <div className="flex h-full flex-col p-6 relative">
       {!showWalkthrough && (
@@ -769,7 +799,7 @@ export default function Words() {
       </div>
       <div className={`flex-1 ${getTourClasses("words-section")}`} id="words-section">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium">Your Word Collection</h2>
+          <h2 className="text-lg font-medium">Your Word group</h2>
           {(extensionId && connected && extensionAvailable) && (
             <div className="flex items-center gap-2">
               <div className="flex items-center text-sm text-green-500">
@@ -798,109 +828,162 @@ export default function Words() {
         ) : userWords.length > 0 ? (
           <div className="space-y-3 pb-6">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-8">
-              {userWords.map((word) => {
-                const thumbmailkey = `${word.show_name}_${word.season}_${word.episode}`;
-                const thumbnailUri = thumbnailUrl[thumbmailkey];
+              {groups.map((col, idx) => [
+                <div key={`col-title-${idx}`} className="col-span-full">
+                  <div className="font-bold text-primary text-xl mb-2 mt-6 bg-muted/40 rounded-xl px-4 py-2">{col.name}</div>
+                </div>,
+                ...col.words.map(word => {
+                  const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
+                  const thumb = thumbnailUrl[thumbKey];
+                  return (
+                    <div key={word.id} className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                      <div className="relative aspect-video">
+                        {thumb ? (
+                          <Image src={thumb} alt={word.show_name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                            <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
+                          </div>
+                        )}
+                        {word.platform && (
+                          <div className="absolute right-3 top-3 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                            <PlatformIcon platform={word.platform} className="h-5 w-5" />
+                          </div>
+                        )}
+                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
+                          <Tv2 className="h-3.5 w-3.5 mr-1" />
+                          S{word.season} • E{word.episode}
+                        </Badge>
+                      </div>
+                      <div className="p-5">
+                        <div className="flex justify-between items-start gap-3 mb-3">
+                          <div>
+                            <h3 className="text-xl font-semibold tracking-tight line-clamp-1">{word.word}{word.is_new && (<span className="ml-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />)}</h3>
+                            <p className="text-sm text-muted-foreground capitalize mt-1">{word.part_of_speech}</p>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl w-48">
+                              <DropdownMenuItem className="gap-2">
+                                <Bookmark className="h-4 w-4" />
+                                Save to group
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2">
+                                <MessageSquare className="h-4 w-4" />
+                                Add note
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator/>
+                              <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("group", word.id)}>
+                                <Trash2 className="h-4 w-4" />
+                                Remove
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <p className="text-sm line-clamp-2 mb-3">{word.definition}</p>
+                        {word.example && (
+                          <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">&quot;{word.example}&quot;</div>
+                        )}
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate max-w-[120px]">{word.show_name}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            <span className="text-xs">{new Date(Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ])}
+              {groups.length > 0 && (
+                <div className="col-span-full my-6">
+                  <hr className="border-t border-border" />
+                </div>
+              )}
+              {userWords.filter(word => !groups.some(col => col.words.some(w => w.id === word.id))).map((word) => {
+                const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
+                const thumb = thumbnailUrl[thumbKey];
+                const isSelected = selected.includes(word.id);
                 return (
-                  <div 
+                  <div
+                    role="checkbox"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onClick={() => toggleSelect(word.id)}
+                    onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') toggleSelect(word.id); }}
+                    className={`relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer select-none ${isSelected ? 'border-2 border-primary ring-2 ring-primary' : ''}`}
                     key={word.id}
-                    className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="relative aspect-video">
-                      {thumbnailUri ? (
-                        <Image
-                          src={thumbnailUri}
-                          alt={word.show_name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
+                      {thumb ? (
+                        <Image src={thumb} alt={word.show_name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                           <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
                         </div>
                       )}
-                      
                       {word.platform && (
                         <div className="absolute right-3 top-3 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
                           <PlatformIcon platform={word.platform} className="h-5 w-5" />
                         </div>
                       )}
-                      
                       <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
                         <Tv2 className="h-3.5 w-3.5 mr-1" />
                         S{word.season} • E{word.episode}
                       </Badge>
                     </div>
-
                     <div className="p-5">
                       <div className="flex justify-between items-start gap-3 mb-3">
                         <div>
-                          <h3 className="text-xl font-semibold tracking-tight line-clamp-1">
-                            {word.word}
-                            {word.is_new && (
-                              <span className="ml-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                            )}
-                          </h3>
-                          <p className="text-sm text-muted-foreground capitalize mt-1">
-                            {word.part_of_speech}
-                          </p>
+                          <h3 className="text-xl font-semibold tracking-tight line-clamp-1">{word.word}{word.is_new && (<span className="ml-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />)}</h3>
+                          <p className="text-sm text-muted-foreground capitalize mt-1">{word.part_of_speech}</p>
                         </div>
-                        
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-9 w-9 rounded-full -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl w-48">
                             <DropdownMenuItem className="gap-2">
                               <Bookmark className="h-4 w-4" />
-                              Save to collection
+                              Save to group
                             </DropdownMenuItem>
                             <DropdownMenuItem className="gap-2">
                               <MessageSquare className="h-4 w-4" />
                               Add note
                             </DropdownMenuItem>
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord(word.id)}>
+                            <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("grid", word.id)}>
                               <Trash2 className="h-4 w-4" />
                               Remove
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-
                       <p className="text-sm line-clamp-2 mb-3">{word.definition}</p>
-                      
                       {word.example && (
-                        <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">
-                          &quot;{word.example}&quot;
-                        </div>
+                        <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">&quot;{word.example}&quot;</div>
                       )}
-
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium truncate max-w-[120px]">
-                            {word.show_name}
-                          </span>
+                          <span className="font-medium truncate max-w-[120px]">{word.show_name}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <CalendarDays className="h-3.5 w-3.5" />
-                          <span className="text-xs">
-                            {new Date(Date.now()).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </span>
+                          <span className="text-xs">{new Date(Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -1419,6 +1502,32 @@ export default function Words() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {selected.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white border shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
+          <span className="font-medium">{selected.length} selected</span>
+          <Button onClick={opengroupModal} className="bg-primary text-white rounded-full px-4">Group</Button>
+          <Button variant={"ghost"} onClick={() => setSelected([])}>Clear</Button>
+        </div>
+      )}
+
+      <Dialog open={showgroupModal} onOpenChange={setShowgroupModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Add to group
+            </DialogTitle>
+          </DialogHeader>
+          <Input className="mb-4" placeholder={"Enter the name"} value={groupInput} onChange={event => setgroupInput(event.target.value)} autoFocus/>
+          <div className="mb-4 text-sm">
+            {selected.length} word{selected.length == 1 ? '' : 's'} will be added.
+          </div>
+          <DialogFooter>
+            <Button variant={"outline"} onClick={closegroupModal}>Cancel</Button>
+            <Button onClick={addTogroup} disabled={!groupInput.trim() || selected.length === 0}>Add</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -36,7 +36,7 @@ export default function MobileNav() {
           <Settings size={20} />
           <span className="text-xs mt-1">Settings</span>
         </Link>
-        <Button onClick={handleLogOut}  className="flex flex-col items-center p-2 text-muted-foreground hover:text-primary">
+        <Button onClick={handleLogOut}  className="flex flex-col items-center p-2 text-muted-foreground bg-transparent">
           <LogOut size={20} />
           <span className="text-xs mt-1">Logout</span>
         </Button>

@@ -14,7 +14,7 @@ export default function Navigation() {
     user_metadata?: {
       name?: string;
       avatar_url?: string;
-      prev_signin_date?: Date;
+      last_sign_in_at?: string;
       streakCount: number;
       [key: string]: unknown;
     };
@@ -52,22 +52,22 @@ export default function Navigation() {
       if (!userData) {
         return;
       }
-
+      
       const today = new Date();
-      const prevSignin = userData.user_metadata?.prev_signin_date ? new Date(userData.user_metadata.prev_signin_date) : null;
+      const prevSignin = userData.user_metadata?.last_sign_in_at ? new Date(userData.user_metadata.last_sign_in_at) : null;
       let newStreak = userData.user_metadata?.streakCount || 0;
       let update = false;
 
       if (!prevSignin) {
         newStreak = 1;
-        update = true;
+        update = false;
       } else {
         const days = Math.floor((today.setHours(0,0,0,0) - prevSignin.setHours(0,0,0,0)) / (1000 * (60**2) * 24));
         if (days === 0) {
 
         } else if (days === 1) {
           newStreak += 1;
-          update = false;
+          update = true;
         } else if (days > 1) {
           newStreak = 1;
           update = true
@@ -79,14 +79,14 @@ export default function Navigation() {
         await supabase.auth.updateUser({
           data: {
             ...userData.user_metadata,
-            prev_signin_date: today.toISOString(),
+            last_sign_in_at: today.toISOString(),
             streakCount: newStreak,
           }
         });
       }
     }
     streak();
-  }, []);
+  }, [userData]);
 
   return (
     <div className="flex h-full flex-col justify-between p-4">
