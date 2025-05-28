@@ -86,7 +86,7 @@ export default function Sidebar() {
         <div className="mt-6">
           <div className="text-sm font-medium mb-2 text-gray-700">Requests</div>
           <div className="space-y-3">
-              <div className="text-xs text-gray-400 text-center">You're all caught up</div>
+              <div className="text-xs text-gray-400 text-center">You&apos;re all caught up</div>
           </div>
         </div>
       </div>
