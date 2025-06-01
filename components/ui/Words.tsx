@@ -9,6 +9,7 @@ import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Pl
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ExtensionConnector } from "@/lib/extension";
 import { RiGithubFill, RiNetflixFill, RiYoutubeFill } from "@remixicon/react";
+import { UserProgress, type Stat } from "@/components/ui/UserProgress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +72,11 @@ export default function Words() {
   | { type: 'AUTH_SUCCESS' }
   | { type: 'DATA_UPDATE'; words: string[] }
   | { type: string; [key: string]: unknown }; 
+
+  const userStats: Stat[] = [
+    { label: "Spent", value: 5, unit: "hrs" },
+    { label: "Watched", value: 10, unit: "shows" },
+  ];
 
   const [userData, setUserData] = useState<UserData>({});
   const [userWords, setUserWords] = useState<Word[]>([]);
@@ -780,13 +786,9 @@ export default function Words() {
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Retention</CardDescription>
-            <CardTitle className="text-2xl">0%</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">Review words regularly to improve</p>
-          </CardContent>
+          <UserProgress
+            stats={userStats}
+          />
         </Card>
         
         <Card>
