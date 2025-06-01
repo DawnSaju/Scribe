@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Home, Settings, LogOut, BookAudio } from "lucide-react";
+import { Home, Settings, LogOut, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase/client";
@@ -105,9 +105,9 @@ export default function Navigation() {
           </Button>
           
           <Button variant="ghost" className="w-full justify-start gap-3" asChild>
-            <Link href="/learn">
-              <BookAudio size={18} />
-              <span>Learn</span>
+            <Link href="/chat">
+              <MessageSquare size={18} />
+              <span>Chat</span>
             </Link>
           </Button>
           
