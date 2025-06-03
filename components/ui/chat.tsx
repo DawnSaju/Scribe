@@ -1,32 +1,62 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/utils/supabase/client';
 import { Lightbulb, FileText, GraduationCap, MoreHorizontal, SquarePen, Copy, LinkIcon, PlusCircle, ArrowUp, ThumbsUp, ThumbsDown, Volume2 } from 'lucide-react';
 
 export default function Chat() {
+  type UserData = {
+    id: string;
+    email?: string;
+    user_metadata?: {
+      name?: string;
+      avatar_url?: string;
+      last_sign_in_at?: string;
+      streakCount: number;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  
   const [messages, setMessages] = useState<{
     role: 'user' | 'assistant';
     content: string;
   }[]>([]);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [input, setInput] = useState('');
+  const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data?.user) {
+        setUserData(data.user as unknown as UserData);
+        setIsReady(true);
+        // console.log(data?.user)
+      } else {
+        console.error(error);
+      }
+    }
+    checkUser();
+  }, [])
 
   const sendMessage = async () => {
     if (input.trim()) {
       const newUserMessage: { role: 'user', content: string } = { role: 'user', content: input };
-      setMessages((prev) => [...prev, newUserMessage]);
+      const allMessages = [...messages, newUserMessage];
+      setMessages(allMessages);
+      setInput('');
       setIsLoading(true);
       const data = await fetch("/api/aiChat", {
         method: "POST",
-        body: JSON.stringify({"data": {role: "user", content: input}}),
+        body: JSON.stringify({messageHistory: allMessages, user: userData?.user_metadata?.name}),
       });
       
       const json = await data.json();
-      console.log("MESSAGE SENT TO CHAT API, Response:", json);
-      
-      setInput('');
+      // console.log("MESSAGE SENT TO CHAT API, Response:", json);
 
-      const aiResponse: { role: 'assistant', content: string } = { role: 'assistant', content: json.data.message };
+      const aiResponse: { role: 'assistant', content: string } = { role: 'assistant', content: json.data };
       setMessages((prev) => [...prev, aiResponse]);
 
       setIsLoading(false);
@@ -49,27 +79,27 @@ export default function Chat() {
         {messages.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-white">
             <h1 className="text-3xl md:text-4xl font-semibold mb-8 text-center text-gray-900">
-                What can I help with ?
+              What can I help with ?
             </h1>
 
             <div className="flex justify-center flex-wrap gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
-                    <Lightbulb className="w-4 h-4 text-yellow-500" /> Learn Words
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
-                    <FileText className="w-4 h-4 text-green-500" /> Use Cases
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
-                    <Volume2 className="w-4 h-4 text-purple-500" /> Improve Grammar
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
-                    <GraduationCap className="w-4 h-4 text-blue-500" /> Quiz Me
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
-                    <MoreHorizontal className="w-4 h-4 text-gray-500" /> More
-                </button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+                <Lightbulb className="w-4 h-4 text-yellow-500" /> Learn Words
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+                <FileText className="w-4 h-4 text-green-500" /> Use Cases
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+                <Volume2 className="w-4 h-4 text-purple-500" /> Improve Grammar
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+                <GraduationCap className="w-4 h-4 text-blue-500" /> Quiz Me
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+                <MoreHorizontal className="w-4 h-4 text-gray-500" /> More
+              </button>
             </div>
-        </div>
+          </div>
         )}
 
         {messages.length > 0 && (
@@ -136,31 +166,35 @@ export default function Chat() {
 
       <div className="border-t border-gray-200 px-4 py-4 bg-white">
         <div className="max-w-[800px] mx-auto relative">
-          <div className="relative flex items-center">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  sendMessage();
-                }
-              }}
-              placeholder="Ask anything"
-              className="w-full pr-20 py-3 px-4 rounded-xl border border-gray-200 focus:outline-none focus:border-gray-300 text-sm bg-white text-gray-900"
-            />
-            <div className="absolute right-2 flex gap-2">
-              <button className="p-2 text-gray-400 hover:text-gray-600">
-                <PlusCircle className="w-5 h-5" />
-              </button>
-              <button
-                className="p-2 text-gray-400 hover:text-gray-600"
-                onClick={sendMessage}
-              >
-                <ArrowUp className="w-5 h-5" />
-              </button>
+          {!isReady ? (
+            <div className="w-full pr-20 py-3 px-4 rounded-xl bg-gray-100 animate-pulse h-10"></div>
+          ) : (
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    sendMessage();
+                  }
+                }}
+                placeholder="Ask anything"
+                className="w-full pr-20 py-3 px-4 rounded-xl border border-gray-200 focus:outline-none focus:border-gray-300 text-sm bg-white text-gray-900"
+              />
+              <div className="absolute right-2 flex gap-2">
+                <button className="p-2 text-gray-400 hover:text-gray-600">
+                  <PlusCircle className="w-5 h-5" />
+                </button>
+                <button
+                  className="p-2 text-gray-400 hover:text-gray-600"
+                  onClick={sendMessage}
+                >
+                  <ArrowUp className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
           <div className="text-xs text-gray-500 text-center mt-2">
             Please note that Scribe can make mistakes. Check important info.
           </div>
