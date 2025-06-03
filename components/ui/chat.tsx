@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { Lightbulb, FileText, GraduationCap, MoreHorizontal, SquarePen, Copy, LinkIcon, PlusCircle, ArrowUp, ThumbsUp, ThumbsDown, Volume2 } from 'lucide-react';
+import { Lightbulb, FileText, GraduationCap, MoreHorizontal, SquarePen, Copy, LinkIcon, PlusCircle, ArrowUp, User, Bot, ThumbsUp, ThumbsDown, Volume2 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default function Chat() {
   type UserData = {
@@ -13,6 +16,7 @@ export default function Chat() {
       avatar_url?: string;
       last_sign_in_at?: string;
       streakCount: number;
+      XP: number;
       [key: string]: unknown;
     };
     [key: string]: unknown;
@@ -25,7 +29,7 @@ export default function Chat() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [input, setInput] = useState('');
   const [isReady, setIsReady] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [XP, setXP] = useState(0);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -33,7 +37,8 @@ export default function Chat() {
       if (data?.user) {
         setUserData(data.user as unknown as UserData);
         setIsReady(true);
-        // console.log(data?.user)
+        setXP(0);
+        // console.log(data?.user);
       } else {
         console.error(error);
       }
@@ -75,6 +80,13 @@ export default function Chat() {
         </button>
       </div>
 
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        <Badge variant="secondary">
+          <Sparkles className="w-4 h-4 mr-1 text-yellow-500" /> XP: {XP}
+        </Badge>
+      </div>
+
+
       <div className="flex-1 overflow-y-hidden p-4 flex flex-col items-center">
         {messages.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-white">
@@ -107,41 +119,26 @@ export default function Chat() {
             {messages.map((msg, index) => (
               <div key={index} className="max-w-[800px] mx-auto mb-8 w-full">
                 {msg.role === "user" ? (
-                  <div className="flex justify-end">
-                    <div className="bg-gray-100 rounded-2xl py-3 px-4 text-sm text-gray-900">
-                      {msg.content}
-                    </div>
-                    <div className="flex gap-2 ml-2 items-center">
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <Copy className="w-4 h-4" />
-                      </button>
+                  <div className="flex-1 flex justify-end">
+                    <div className="flex items-end gap-2">
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl py-3 px-4 text-sm text-gray-900 shadow-sm transition-all">
+                        {msg.content}
+                      </div>
+                      <Avatar>
+                        <AvatarFallback className="bg-primary text-white"><User className="w-4 h-4" /></AvatarFallback>
+                      </Avatar>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 text-sm text-gray-900">{msg.content}</div>
-                      <div className="flex gap-2 items-start">
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <ThumbsUp className="w-4 h-4" />
-                        </button>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <ThumbsDown className="w-4 h-4" />
-                        </button>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <Volume2 className="w-4 h-4" />
-                        </button>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <LinkIcon className="w-4 h-4" />
-                        </button>
-                        <button className="text-gray-400 hover:text-gray-600">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+                    <Avatar>
+                      <AvatarFallback className="bg-gray-200 text-gray-500"><Bot className="w-4 h-4" /></AvatarFallback>
+                    </Avatar>
+                    <Card className="flex-1 bg-white/90 border border-gray-200 shadow-md rounded-2xl transition-all hover:shadow-lg">
+                      <CardContent className="py-4 px-5">
+                        {msg.content}
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
               </div>
