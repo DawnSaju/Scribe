@@ -73,11 +73,6 @@ export default function Words() {
   | { type: 'DATA_UPDATE'; words: string[] }
   | { type: string; [key: string]: unknown }; 
 
-  const userStats: Stat[] = [
-    { label: "Spent", value: 5, unit: "hrs" },
-    { label: "Watched", value: 10, unit: "shows" },
-  ];
-
   const [userData, setUserData] = useState<UserData>({});
   const [userWords, setUserWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,6 +97,12 @@ export default function Words() {
   const [selected, setSelected] = useState<string[]>([]);
   const [showgroupModal, setShowgroupModal] = useState(false);
   const [groupInput, setgroupInput] = useState("");
+  const noOfShows = new Set(userWords.map(word => word.show_name)).size;
+
+  const userStats: Stat[] = [
+    { label: "Spent", value: 5, unit: "hrs" },
+    { label: "Watched", value: noOfShows, unit: "shows" },
+  ];
 
   const guide = [
     {
