@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
-import { Lightbulb, FileText, GraduationCap, MoreHorizontal, SquarePen, Copy, LinkIcon, PlusCircle, ArrowUp, User, Bot, ThumbsUp, ThumbsDown, Volume2 } from 'lucide-react';
+import { Lightbulb, FileText, GraduationCap, MoreHorizontal, SquarePen, PlusCircle, ArrowUp, Volume2, User, Bot, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
