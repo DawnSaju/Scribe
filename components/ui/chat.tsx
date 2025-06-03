@@ -11,18 +11,25 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (input.trim()) {
       const newUserMessage: { role: 'user', content: string } = { role: 'user', content: input };
       setMessages((prev) => [...prev, newUserMessage]);
       setIsLoading(true);
-      setInput(''); 
+      const data = await fetch("/api/aiChat", {
+        method: "POST",
+        body: JSON.stringify({"data": {role: "user", content: input}}),
+      });
+      
+      const json = await data.json();
+      console.log("MESSAGE SENT TO CHAT API, Response:", json);
+      
+      setInput('');
 
-      setTimeout(() => {
-        const aiResponse: { role: 'assistant', content: string } = { role: 'assistant', content: `This is a test response from AI` };
-        setMessages((prev) => [...prev, aiResponse]); 
-        setIsLoading(false);
-      }, 1500);
+      const aiResponse: { role: 'assistant', content: string } = { role: 'assistant', content: json.data.message };
+      setMessages((prev) => [...prev, aiResponse]);
+
+      setIsLoading(false);
     }
   };
 
