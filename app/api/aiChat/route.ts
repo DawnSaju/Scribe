@@ -4,6 +4,11 @@ export async function POST(request: Request){
     const body = await request.json();
     const userMessages = body?.messageHistory;
     const user = body?.user;
+    const endpoint = process.env.NEXT_PUBLIC_ENDPOINT;
+
+    if (!endpoint) {
+      throw new Error("Missing endpoint in env");
+    }
     // console.log("API chat request:", userMessages);
     
     const messages = [
@@ -12,7 +17,7 @@ export async function POST(request: Request){
       ...userMessages
     ];
 
-    const data = await fetch(process.env.NEXT_PUBLIC_ENDPOINT, {
+    const data = await fetch(endpoint, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
