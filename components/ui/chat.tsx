@@ -29,6 +29,7 @@ export default function Chat() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [input, setInput] = useState('');
   const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [XP, setXP] = useState(0);
 
   useEffect(() => {
