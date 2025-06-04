@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase/client";
 import { UserPlus, Settings, BarChart2, MessageCircle } from "lucide-react";
 import Image from "next/image";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 export default function Sidebar() {
   type UserData = {
@@ -18,6 +21,11 @@ export default function Sidebar() {
     [key: string]: unknown;
   };
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -30,6 +38,33 @@ export default function Sidebar() {
     }
     checkUser();
   }, []);
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    setIsSearching(true);
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    const res = await fetch('/api/searchUsers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: userData?.id, userinput: query }),
+    });
+    const { users } = await res.json();
+    setSearchResults(users || []);
+    setIsSearching(false);
+  };
+
+  const handleSendRequest = (user: any) => {
+    setRequestSent(true);
+    setTimeout(() => {
+      setRequestSent(false);
+      setSearchQuery('');
+      setSearchResults([]);
+    }, 1200);
+  };
 
   return (
     <div className="flex flex-col items-center w-full max-w-sm mx-auto bg-white rounded-3xl p-6 relative overflow-hidden">
@@ -82,6 +117,59 @@ export default function Sidebar() {
         </div>
         <Button variant="outline" className="w-full mt-6 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl">See All</Button>
 
+        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add a Friend</DialogTitle>
+              <DialogDescription>
+                Search for users by name or email to send a friend request.
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              placeholder="Search by name or email..."
+              value={searchQuery}
+              onChange={e => handleSearch(e.target.value)}
+              autoFocus
+              className="mb-4"
+            />
+            {searchQuery && (
+              <div className="space-y-2 min-h-[60px]">
+                {isSearching ? (
+                  <div className="flex justify-center py-4">Searching...</div>
+                ) : requestSent ? (
+                  <div className="text-green-600 text-center py-4">Friend request sent!</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-xs text-gray-400 text-center">No users found.</div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map(user => (
+                    <div key={user.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <Image 
+                          src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.email || 'User')}&background=random&color=fff&size=70`}
+                          alt={user.full_name || user.email} 
+                          width={32} 
+                          height={32} 
+                          className="rounded-full object-cover" 
+                        />
+                        <div>
+                          <div className="font-medium text-sm">{user.name}</div>
+                          <div className="text-xs text-gray-400">{user.email}</div>
+                        </div>
+                      </div>
+                      <Button size="sm" className="rounded-full px-3 bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleSendRequest(user)}>
+                        <UserPlus className="h-4 w-4 mr-1" /> Request
+                      </Button>
+                    </div>
+                  ))
+                ) : null}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setModalOpen(false)} className="w-full">Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <div className="mt-6">
           <div className="text-sm font-medium mb-2 text-gray-700">Requests</div>
           <div className="space-y-3">
@@ -92,4 +180,3 @@ export default function Sidebar() {
     </div>
   );
 }
-
