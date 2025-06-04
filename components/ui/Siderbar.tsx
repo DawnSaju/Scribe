@@ -171,7 +171,7 @@ export default function Sidebar() {
                       <div className="flex items-center gap-3">
                         <Image 
                           src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.email || 'User')}&background=random&color=fff&size=70`}
-                          alt={user.name || user.email} 
+                          alt={user.full_name || user.email} 
                           width={32} 
                           height={32} 
                           className="rounded-full object-cover" 
