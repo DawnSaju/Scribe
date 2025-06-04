@@ -133,7 +133,7 @@ export default function Sidebar() {
       <div className="w-full mt-6">
         <div className="flex items-center justify-between mb-2">
           <div className="text-base font-semibold">Your Friends</div>
-          <button className="w-7 h-7 rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100">
+          <button className="w-7 h-7 rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100" onClick={() => setModalOpen(true)}>
             <UserPlus className="h-4 w-4" />
           </button>
         </div>
