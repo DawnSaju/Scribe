@@ -20,9 +20,17 @@ export default function Sidebar() {
     };
     [key: string]: unknown;
   };
+
+  type SearchUser = {
+    id: string;
+    email: string;
+    name: string;
+    avatar_url?: string;
+  };
+  
   const [userData, setUserData] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
@@ -57,13 +65,30 @@ export default function Sidebar() {
     setIsSearching(false);
   };
 
-  const handleSendRequest = (user: any) => {
-    setRequestSent(true);
-    setTimeout(() => {
-      setRequestSent(false);
-      setSearchQuery('');
-      setSearchResults([]);
-    }, 1200);
+  const handleSendRequest = async (reciever: SearchUser) => {
+    try {
+      const { error } = await supabase
+        .from('friend_requests')
+        .insert([
+          {
+            sender_id: userData?.id,
+            receiver_id: reciever.id,
+            status: 'pending'
+          }
+        ]);
+
+      if (error) throw error;
+      
+      setRequestSent(true);
+      setTimeout(() => {
+        setRequestSent(false);
+        setModalOpen(false);
+        setSearchQuery('');
+        setSearchResults([]);
+      }, 1200);
+    } catch (error) {
+      console.error('Error sending friend request:', error);
+    }
   };
 
   return (
