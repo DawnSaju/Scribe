@@ -24,7 +24,7 @@ export default function Sidebar() {
   type SearchUser = {
     id: string;
     email: string;
-    name: string;
+    full_name: string;
     avatar_url?: string;
   };
   
@@ -177,7 +177,7 @@ export default function Sidebar() {
                           className="rounded-full object-cover" 
                         />
                         <div>
-                          <div className="font-medium text-sm">{user.name}</div>
+                          <div className="font-medium text-sm">{user.full_name}</div>
                           <div className="text-xs text-gray-400">{user.email}</div>
                         </div>
                       </div>
