@@ -4,6 +4,7 @@ export async function POST(request: Request){
     const body = await request.json();
     const userMessages = body?.messageHistory;
     const user = body?.user;
+    const words = body?.userWordsData;
     const endpoint = process.env.NEXT_PUBLIC_ENDPOINT;
 
     if (!endpoint) {
@@ -13,7 +14,8 @@ export async function POST(request: Request){
     
     const messages = [
       { role: "system", content: process.env.NEXT_PUBLIC_SYSTEM },
-      { role: "user", content: `UserData: Name: ${user}` },
+      { role: "user", content: `UserData: Name: ${user}`},
+      { role: "user", content: `List of words captured: ${JSON.stringify(words)}`},
       ...userMessages
     ];
 
