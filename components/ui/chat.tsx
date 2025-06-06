@@ -54,9 +54,13 @@ export default function Chat() {
       setMessages(allMessages);
       setInput('');
       setIsLoading(true);
+      const { data: words } = await supabase
+        .from("learned_words") 
+        .select('id, word, part_of_speech, is_new, definition, example, platform, show_name, season, episode')
+        .eq("user_id", userData?.id);
       const data = await fetch("/api/aiChat", {
         method: "POST",
-        body: JSON.stringify({messageHistory: allMessages, user: userData?.user_metadata?.name}),
+        body: JSON.stringify({messageHistory: allMessages, user: userData?.user_metadata?.name, userWordsData: words}),
       });
       
       const json = await data.json();
