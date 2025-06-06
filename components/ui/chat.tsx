@@ -69,6 +69,15 @@ export default function Chat() {
     }
   };
 
+  const handleSuggestions = (event: string) => {
+    if (input.trim()){
+      setInput(event);
+    } else {
+      setInput("")
+      setInput(event)
+    }
+  }
+
   const reset = () => {
     setMessages([]);
   }
@@ -96,19 +105,19 @@ export default function Chat() {
             </h1>
 
             <div className="flex justify-center flex-wrap gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+              <button onClick={() => handleSuggestions("I want to learn some words I can use in everyday conversations.")} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
                 <Lightbulb className="w-4 h-4 text-yellow-500" /> Learn Words
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+              <button onClick={() => handleSuggestions("Can you show how to use the word [WORD] in a conversation?")} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
                 <FileText className="w-4 h-4 text-green-500" /> Use Cases
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+              <button onClick={() => handleSuggestions("I want to improve my grammar")} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
                 <Volume2 className="w-4 h-4 text-purple-500" /> Improve Grammar
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+              <button onClick={() => handleSuggestions("Let's do a fun quiz on the words I've learnt so far")} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
                 <GraduationCap className="w-4 h-4 text-blue-500" /> Quiz Me
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
+              <button onClick={() => handleSuggestions("")} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm hover:bg-gray-100 text-gray-800">
                 <MoreHorizontal className="w-4 h-4 text-gray-500" /> More
               </button>
             </div>
