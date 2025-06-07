@@ -116,7 +116,7 @@ export default function Content() {
                   <motion.div className="flex justify-center items-center" variants={cardVariants}>
                     <div className="inline-flex flex-col justify-start items-center">
                       <button className="px-6 py-4 relative bg-gradient-to-r from-blue-300 to-blue-600 rounded-full flex justify-center items-center gap-3 overflow-hidden cursor-pointer">
-                        <Link href="/" className="text-white text-base font-medium font-['DM_Sans'] leading-none">
+                        <Link href="/auth" className="text-white text-base font-medium font-['DM_Sans'] leading-none">
                           Start learning now
                         </Link>
                       </button>
