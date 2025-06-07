@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Home, BarChart, User, Settings, LogOut } from "lucide-react";
+import { Home, MessageSquare, Settings, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -24,13 +24,9 @@ export default function MobileNav() {
           <Home size={20} />
           <span className="text-xs mt-1">Home</span>
         </Link>
-        <Link href="/stats" className="flex flex-col items-center p-2 text-muted-foreground hover:text-primary">
+        <Link href="/chat" className="flex flex-col items-center p-2 text-muted-foreground hover:text-primary">
           <BarChart size={20} />
-          <span className="text-xs mt-1">Stats</span>
-        </Link>
-        <Link href="/profile" className="flex flex-col items-center p-2 text-muted-foreground hover:text-primary">
-          <User size={20} />
-          <span className="text-xs mt-1">Profile</span>
+          <span className="text-xs mt-1">Chat</span>
         </Link>
         <Link href="/settings" className="flex flex-col items-center p-2 text-muted-foreground hover:text-primary">
           <Settings size={20} />
