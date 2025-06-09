@@ -120,15 +120,12 @@ export default function Sidebar() {
         </div>
       </div>
       <div className="flex justify-center gap-6 my-4">
-        <button className="w-10 h-10 rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100">
+        <Link href={"/settings"} className="w-10 h-10 rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100">
           <Settings className="w-5 h-5" />
-        </button>
-        <button className="w-10 h-10 rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100">
-          <BarChart2 className="w-5 h-5" />
-        </button>
-        <button className="w-10 h-10 rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100">
+        </Link>
+        <Link href={"chat"} className="w-10 h-10 rounded-full border flex items-center justify-center text-gray-500 hover:bg-gray-100">
           <MessageCircle className="w-5 h-5" />
-        </button>
+        </Link>
       </div>
       <div className="w-full mt-6">
         <div className="flex items-center justify-between mb-2">
