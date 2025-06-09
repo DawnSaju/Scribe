@@ -30,6 +30,8 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const [playingId, setPlayingId] = useState<number | null>(null);
   const [XP, setXP] = useState(0);
 
   useEffect(() => {
@@ -81,6 +83,41 @@ export default function Chat() {
       setInput(event)
     }
   }
+
+  const handleVoice = async (text: string, count: number) => {
+    setPlayingId(count);
+    setIsAudioLoading(true);
+    try {
+      const response = await fetch('/api/voice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+        audio.onended = () => {
+          setIsAudioLoading(false);
+          setPlayingId(null);
+        };
+      } else {
+        const errorData = await response.json();
+        console.error('Error playing audio:', errorData);
+        alert('Failed to play audio: ' + (errorData.error || 'Unknown error'));
+        setIsAudioLoading(false);
+        setPlayingId(null);
+      }
+    } catch (error) {
+      console.error('Network error playing audio:', error);
+      setIsAudioLoading(false);
+      setPlayingId(null);
+    }
+  };
 
   const reset = () => {
     setMessages([]);
@@ -145,14 +182,25 @@ export default function Chat() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Avatar>
-                      <AvatarFallback className="bg-gray-200 text-gray-500"><Bot className="w-4 h-4" /></AvatarFallback>
-                    </Avatar>
-                    <Card className="flex-1 bg-white/90 border border-gray-200 shadow-md rounded-2xl transition-all hover:shadow-lg">
-                      <CardContent className="py-4 px-5">
-                        {msg.content}
-                      </CardContent>
-                    </Card>
+                     <Avatar>
+                        <AvatarFallback className="bg-gray-200 text-gray-500"><Bot className="w-4 h-4" /></AvatarFallback>
+                      </Avatar>
+                      <Card className="flex-1 bg-white/90 border border-gray-200 shadow-md rounded-2xl transition-all hover:shadow-lg">
+                        <CardContent className="py-4 px-5">
+                          {msg.content}
+                        </CardContent>
+                        <button
+                          onClick={() => handleVoice(msg.content, index)}
+                          className="p-2 text-gray-400 hover:text-gray-600"
+                          disabled={isAudioLoading && playingId === index}
+                        >
+                          {isAudioLoading && playingId === index ? (
+                            <span className="animate-spin inline-block h-5 w-5 rounded-full border-4 border-t-4 border-gray-200 border-t-blue-600"></span>
+                          ) : (
+                            <Volume2/>
+                          )}
+                        </button>
+                      </Card>
                   </div>
                 )}
               </div>
