@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase/client";
-import { UserPlus, Settings, BarChart2, MessageCircle } from "lucide-react";
+import { UserPlus, Settings, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
