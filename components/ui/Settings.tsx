@@ -5,6 +5,17 @@ import { supabase } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, UploadIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Settings() {
   type UserData = {
@@ -18,8 +29,11 @@ export default function Settings() {
     [key: string]: unknown;
   };
   
+  const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [value, setValue] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const namelength = 32;
   const isError = value.length > namelength;
 
@@ -39,6 +53,32 @@ export default function Settings() {
   useEffect(() => {
     setValue(userData?.user_metadata?.name || "");
   }, [userData]);
+
+  const deleteModal = () => {
+    setDeleteModalOpen(true);
+  }
+
+  const handleDeleteACc = async () => {
+    if (!userData) {
+        return "NOTOO"
+    }
+    setIsDeleting(true);
+    // console.log("USER DATA:", userData);
+    const data = await fetch('/api/userControl/deleteUser', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: userData.id }),
+    });
+
+    if (data) {
+        setIsDeleting(false);
+        router.push("/auth")
+    } else {
+        console.error("data not found")
+    }
+  };
 
   return (
     <div className="flex flex-col justify-center">
@@ -105,11 +145,32 @@ export default function Settings() {
                     <hr />
                     <div className="flex flex-row justify-between items-center">
                         <h1 className="font-['DM Sans'] font-medium text-sm text-red-500">This action cannot be undone!</h1>
-                        <Button className="bg-red-600 text-white hover:bg-red-500 hover:text-white cursor-pointer">Delete account</Button>
+                        <Button onClick={deleteModal} className="bg-red-600 text-white hover:bg-red-500 hover:text-white cursor-pointer">Delete account</Button>
                     </div>
                 </div>
             </div>
         </div>
+      <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Are you really sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your
+                      account and remove all your existing data on Scribe.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteACc} className="bg-red-600 text-white hover:bg-red-500" disabled={isDeleting}>
+                      {isDeleting ? (
+                          <span className="animate-spin inline-block h-5 w-5 rounded-full border-4 border-t-4 border-gray-200 border-t-red-600"></span>
+                      ) : (
+                          "Delete"
+                      )}
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 
