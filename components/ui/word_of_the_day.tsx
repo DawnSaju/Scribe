@@ -184,7 +184,7 @@ export default function WordOfTheDay() {
         const audioUrl = newWordData.phonetics?.find((p: Phonetic) => p.audio)?.audio;
         setAudioavailable(audioUrl);
       } else {
-        console.log(existingWord)
+        // console.log(existingWord);
         setWordData({
           word: existingWord.word,
           phonetic: existingWord.phonetic,
