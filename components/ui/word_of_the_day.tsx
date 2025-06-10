@@ -181,7 +181,7 @@ export default function WordOfTheDay() {
         }
 
         setWordData(newWordData);
-        const audioUrl = newWordData.phonetics?.find((p: any) => p.audio)?.audio;
+        const audioUrl = newWordData.phonetics?.find((p: Phonetic) => p.audio)?.audio;
         setAudioavaliable(audioUrl);
       } else {
         console.log(existingWord)
@@ -191,7 +191,7 @@ export default function WordOfTheDay() {
           phonetics: existingWord.phonetics,
           meanings: existingWord.meanings
         });
-        const audioUrl = existingWord.phonetics?.find((p: any) => p.audio)?.audio;
+        const audioUrl = existingWord.phonetics?.find((p: Phonetic) => p.audio)?.audio;
         setAudioavaliable(audioUrl);
       }
     } catch (error) {
@@ -331,7 +331,7 @@ export default function WordOfTheDay() {
                             <li key={idx} className="text-sm text-blue-900/80">
                               {def.definition}
                               {def.example && (
-                                <p className="text-xs text-blue-600/70 italic mt-0.5">"{def.example}"</p>
+                                <p className="text-xs text-blue-600/70 italic mt-0.5">&quot;{def.example}&quot;</p>
                               )}
                             </li>
                           ))}
