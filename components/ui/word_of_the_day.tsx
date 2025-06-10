@@ -40,7 +40,7 @@ export default function WordOfTheDay() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [Audioavaliable, setAudioavaliable] = useState(false);
+  const [Audioavailable, setAudioavailable] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const MAX_RETRIES = 5;
@@ -93,7 +93,7 @@ export default function WordOfTheDay() {
       
       if (Array.isArray(data) && data.length > 0) {
         setRetryCount(0);
-        setAudioavaliable(!!data[0].phonetics?.[0]?.audio);
+        setAudioavailable(!!data[0].phonetics?.[0]?.audio);
         return data[0];
       } else {
         setRetryCount(prev => prev + 1);
@@ -121,7 +121,7 @@ export default function WordOfTheDay() {
 
     setIsLoading(true);
     setError(null);
-    setAudioavaliable(false);
+    setAudioavailable(false);
 
     try {
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
@@ -182,7 +182,7 @@ export default function WordOfTheDay() {
 
         setWordData(newWordData);
         const audioUrl = newWordData.phonetics?.find((p: Phonetic) => p.audio)?.audio;
-        setAudioavaliable(audioUrl);
+        setAudioavailable(audioUrl);
       } else {
         console.log(existingWord)
         setWordData({
@@ -192,7 +192,7 @@ export default function WordOfTheDay() {
           meanings: existingWord.meanings
         });
         const audioUrl = existingWord.phonetics?.find((p: Phonetic) => p.audio)?.audio;
-        setAudioavaliable(audioUrl);
+        setAudioavailable(audioUrl);
       }
     } catch (error) {
       console.error('Error in fetchWord:', error);
@@ -273,7 +273,7 @@ export default function WordOfTheDay() {
               <div className="flex items-center space-x-2">
                 <h3 className="text-lg font-bold text-blue-700">{wordData.word}</h3>
                 <p className="text-sm text-blue-600/80 italic">{wordData.phonetic}</p>
-                {Audioavaliable && (
+                {Audioavailable && (
                   <Button
                     variant="ghost"
                     size="icon"
