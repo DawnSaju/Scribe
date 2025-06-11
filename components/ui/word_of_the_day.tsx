@@ -76,7 +76,7 @@ export default function WordOfTheDay() {
     }
 
     try {
-      const wordResponse = await fetch("https://random-word-api.herokuapp.com/word");
+      const wordResponse = await fetch("https://random-word-api.vercel.app/api?words=1");
       const randomWord = await wordResponse.json();
       
       const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${randomWord}`);
