@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request){
     const body = await request.json();
+    const wordOftheDay = body?.word_of_the_day;
     const userMessages = body?.messageHistory;
     const user = body?.user;
     const words = body?.userWordsData;
@@ -13,7 +14,7 @@ export async function POST(request: Request){
     // console.log("API chat request:", userMessages);
     
     const messages = [
-      { role: "system", content: process.env.NEXT_PUBLIC_SYSTEM },
+      { role: "system", content: `${process.env.NEXT_PUBLIC_SYSTEM}. Here's the word of the day for this user: ${JSON.stringify(wordOftheDay)}` },
       { role: "user", content: `UserData: Name: ${user}`},
       { role: "user", content: `List of words captured: ${JSON.stringify(words)}`},
       ...userMessages
