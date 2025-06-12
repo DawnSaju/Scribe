@@ -143,20 +143,6 @@ export default function LoginPage() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
                     </div>
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="off"
-                      required
-                      className="appearance-none relative block w-full px-3 py-4 pl-10 border border-gray-200 bg-gray-50 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                      placeholder="Password (min. 8 characters)"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center">
                     <Input
                       id="password"
                       name="password"
@@ -166,6 +152,17 @@ export default function LoginPage() {
                       required
                       className="appearance-none relative block w-full px-3 py-6 pl-10 border border-gray-200 bg-gray-50 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                       placeholder="Password (min. 8 characters)"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-6">
+                  <div className="flex items-center">
+                    <input
+                      id="remember-me"
+                      name="remember-me"
+                      type="checkbox"
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                       Remember me
