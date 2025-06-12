@@ -2,16 +2,19 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, Quote } from 'lucide-react';
 import { supabase } from '@/utils/supabase/client';
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 import { RiGoogleFill } from "@remixicon/react";
+import { Input } from '@/components/ui/input';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [userEmail, setUserEmail] = useState('');
+  const [userPassword, setUserPassword] = useState('')
 
   useEffect(() => {
     const checkUser = async () => {
@@ -25,6 +28,34 @@ export default function LoginPage() {
 
     checkUser();
   }, [router]);
+
+  const handleTraditional = async (e) => {
+    e.preventDefault();
+    try {
+      const isDEV = typeof window !== 'undefined' && 
+              window.location.host.includes('ngrok-free.app');
+                 
+      const redirectURL = isDEV
+      ? `${window.location.origin}/auth/callback`
+      : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
+
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: userPassword,
+      });
+
+      if (!error) {
+        router.push(redirectURL);
+      } else {
+        console.error("Auth error:", error.message);
+        return;
+      }
+
+      console.log("Successfully signed in:", data);
+    } catch {
+      console.error("Unexpected error during auth");
+    }
+  };
   
   const handleGoogleAuth = async () => {
     const isDEV = typeof window !== 'undefined' && 
@@ -86,23 +117,24 @@ export default function LoginPage() {
                 Welcome back to Scribe
               </h2>
 
-              <form className="mt-8 space-y-6" action="#" method="POST">
+              <form className="mt-8 space-y-6" onSubmit={handleTraditional}>
                 <input type="hidden" name="remember" defaultValue="true" />
 
                 <div className="rounded-md shadow-sm -space-y-px">
                   <div className="relative mb-4">
-                    <label htmlFor="username" className="sr-only">Username</label>
+                    <label htmlFor="username" className="sr-only">Email</label>
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
                     </div>
-                    <input
-                      id="username"
-                      name="username"
-                      type="text"
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
                       autoComplete="off"
+                      onChange={(e) => setUserEmail(e.target.value)}
                       required
-                      className="appearance-none relative block w-full px-3 py-4 pl-10 border border-gray-200 bg-gray-50 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                      placeholder="Username"
+                      className="appearance-none relative block w-full px-3 py-6 pl-10 border border-gray-200 bg-gray-50 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                      placeholder="Email"
                     />
                   </div>
 
@@ -125,11 +157,15 @@ export default function LoginPage() {
 
                 <div className="flex items-center justify-between mt-6">
                   <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="off"
+                      onChange={(e) => setUserPassword(e.target.value)}
+                      required
+                      className="appearance-none relative block w-full px-3 py-6 pl-10 border border-gray-200 bg-gray-50 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                      placeholder="Password (min. 8 characters)"
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                       Remember me
