@@ -117,7 +117,7 @@ export default function LoginPage() {
                 Welcome back to Scribe
               </h2>
 
-              <form className="mt-8 space-y-6" onSubmit={handleTraditional}>
+              <form className="mt-8 space-y-6" onSubmit={(e: React.FormEvent<HTMLFormElement>) => handleTraditional(e)}>
                 <input type="hidden" name="remember" defaultValue="true" />
 
                 <div className="rounded-md shadow-sm -space-y-px">
