@@ -6,6 +6,7 @@ import { Lightbulb, FileText, GraduationCap, MoreHorizontal, SquarePen, PlusCirc
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import Markdown from 'react-markdown';
 
 export default function Chat() {
   type UserData = {
@@ -201,7 +202,7 @@ export default function Chat() {
                       </Avatar>
                       <Card className="flex-1 bg-white/90 border border-gray-200 shadow-md rounded-2xl transition-all hover:shadow-lg">
                         <CardContent className="py-4 px-5">
-                          {msg.content}
+                          <Markdown>{msg.content}</Markdown>
                         </CardContent>
                         <button
                           onClick={() => handleVoice(msg.content, index)}
