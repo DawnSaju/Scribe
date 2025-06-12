@@ -29,7 +29,7 @@ export default function LoginPage() {
     checkUser();
   }, [router]);
 
-  const handleTraditional = async (e: React.FormEvent<HTMLFormElement>) {
+  const handleTraditional = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const isDEV = typeof window !== 'undefined' && 
