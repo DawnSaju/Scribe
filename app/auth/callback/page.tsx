@@ -32,12 +32,13 @@ const CallbackPage = () => {
 
         const user = sessionData.session.user;
         const hasOnboarded = user.user_metadata?.has_onboarded;
+        const currentXP = user.user_metadata?.XP ?? 0;
 
         localStorage.setItem('user', JSON.stringify(user));
 
         if (hasOnboarded === undefined) {
           supabase.auth.updateUser({
-            data: { has_onboarded: false }
+            data: { has_onboarded: false, XP: currentXP }
           }).then(({ error: updateError }) => {
             if (updateError) {
               console.error('Failed to update user metadata:', updateError.message);
