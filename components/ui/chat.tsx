@@ -33,7 +33,7 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [playingId, setPlayingId] = useState<number | null>(null);
-  const [XP, setXP] = useState(0);
+  const [XPpoints, setXPpoints] = useState(0);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -41,7 +41,7 @@ export default function Chat() {
       if (data?.user) {
         setUserData(data.user as unknown as UserData);
         setIsReady(true);
-        setXP(0);
+        setXPpoints(data.user?.user_metadata?.XP ?? 0);
         // console.log(data?.user);
       } else {
         console.error(error);
@@ -49,6 +49,27 @@ export default function Chat() {
     }
     checkUser();
   }, [])
+
+  const handleUserXP = async (increment: number) => {
+    setXPpoints(prevXP => {
+      const newXP = Math.floor((prevXP ?? 0) + increment);
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          supabase.auth.updateUser({
+            data: {
+              ...user.user_metadata,
+              XP: newXP
+            }
+          }).then(({ error: updateError }) => {
+            if (updateError) {
+              console.error('Failed to update user metadata:', updateError.message);
+            }
+          });
+        }
+      });
+      return newXP;
+    });
+  }
 
   const sendMessage = async () => {
     if (input.trim()) {
@@ -81,9 +102,23 @@ export default function Chat() {
       });
       
       const json = await data.json();
-      // console.log("MESSAGE SENT TO CHAT API, Response:", json);
 
-      const aiResponse: { role: 'assistant', content: string } = { role: 'assistant', content: json.data };
+      let markdown_json;
+
+      try {
+        markdown_json = JSON.parse(json.data);
+      } catch (error) {
+        console.log(error)
+      }
+      
+      const aiResponse: { role: 'assistant', content: string } = { role: 'assistant', content: markdown_json.message || '' };
+
+      if (markdown_json) {
+        handleUserXP(markdown_json.XP ?? 0);
+      } else {
+        console.error("Error not a json format")
+      }
+      
       setMessages((prev) => [...prev, aiResponse]);
 
       setIsLoading(false);
@@ -148,7 +183,7 @@ export default function Chat() {
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
         <Badge variant="secondary">
-          <Sparkles className="w-4 h-4 mr-1 text-yellow-500" /> XP: {XP}
+          <Sparkles className="w-4 h-4 mr-1 text-yellow-500" /> XP: {XPpoints}
         </Badge>
       </div>
 
