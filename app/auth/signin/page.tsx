@@ -70,10 +70,6 @@ export default function LoginPage() {
       options: {
         redirectTo: redirectURL,
         skipBrowserRedirect: false,
-        queryParams: {
-          prompt: 'consent',
-          access_type: 'offline'
-        }
       },
     })
     if (error) {
