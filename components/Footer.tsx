@@ -95,13 +95,8 @@ const Footer = () => {
         <div className="flex flex-col items-center sm:flex-row sm:justify-between">
           <ul className="flex flex-col items-center space-y-3 sm:space-y-0 sm:flex-row sm:space-x-6 order-2 sm:order-2 mt-4 sm:mt-0">
             <li>
-              <Link href="/privacy-policy" title="Privacy Policy" className="text-sm font-normal text-neutral-600 dark:text-neutral-400 transition-all duration-200 hover:text-neutral-900 dark:hover:text-neutral-100 font-pj">
+              <Link href="/policy" title="Privacy Policy" className="text-sm font-normal text-neutral-600 dark:text-neutral-400 transition-all duration-200 hover:text-neutral-900 dark:hover:text-neutral-100 font-pj">
                 Privacy Policy
-              </Link>
-            </li>
-            <li>
-              <Link href="/terms-of-service" title="Terms & Conditions" className="text-sm font-normal text-neutral-600 dark:text-neutral-400 transition-all duration-200 hover:text-neutral-900 dark:hover:text-neutral-100 font-pj">
-                Terms & Conditions
               </Link>
             </li>
           </ul>
