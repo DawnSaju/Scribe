@@ -277,29 +277,6 @@ export default function Words() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!extensionId || extensionId.trim() === '') {
-      setConnected(false);
-      setExtensionAvailable(false);
-      return;
-    }
-    let cancelled = false;
-    const check = async () => {
-      const isAvailable = await ExtensionConnector.isExtensionInstalled();
-      if (cancelled) return;
-      setExtensionAvailable(isAvailable);
-      if (isAvailable) {
-        const isConnected = await ExtensionConnector.connect();
-        if (cancelled) return;
-        setConnected(isConnected);
-      } else {
-        setConnected(false);
-      }
-    };
-    check();
-    return () => { cancelled = true; };
-  }, [extensionId]);
-
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
@@ -1381,9 +1358,6 @@ export default function Words() {
                                     value={extensionId}
                                     onChange={e => {
                                       setExtensionId(e.target.value);
-                                      setConnected(false);
-                                      setExtensionAvailable(false);
-                                      setConnectionError(false);
                                     }}
                                     className="mb-2"
                                     autoFocus
@@ -1445,8 +1419,11 @@ export default function Words() {
                     )}
                     <Button 
                       onClick={async () => {
-                        if (extensionId.trim() === '') return;
+                        if (extensionId.trim() === '') {
+                          return;
+                        }
                         ExtensionConnector.setExtensionId(extensionId.trim());
+                        handleConnect();
                         if (typeof window !== 'undefined') {
                           localStorage.setItem('extensionId', extensionId.trim());
                         }
