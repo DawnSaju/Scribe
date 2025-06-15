@@ -11,9 +11,9 @@ export default function PrivacyPolicy() {
                         <p className="text-gray-600 mb-8">Last updated: June 15, 2025</p>
 
                         <p className="text-gray-700 leading-relaxed mb-8">
-                            Scribe ("we", "our", or "us") operates this&nbsp;
+                            Scribe (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) operates this&nbsp;
                             <a href="https://scribe-app.xyz" className="text-blue-600 underline">website</a>
-                            &nbsp;and the Scribe Chrome Extension (together called the "Service").
+                            &nbsp;and the Scribe Chrome Extension (together called the &quot;Service&quot;).
                         </p>
 
                         <p className="text-gray-700 leading-relaxed mb-8">
