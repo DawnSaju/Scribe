@@ -212,13 +212,6 @@ export default function LoginPage() {
                     <span className="text-white text-sm font-medium">Slack</span>
                   </Button>
                 </div>
-
-              <p className="mt-8 text-center text-sm text-gray-600">
-                Don’t have an account?{' '}
-                <Link href="/auth/signup" className="font-['DM Sans'] font-bold text-[#1E78FF] hover:underline">
-                  Sign up now
-                </Link>
-              </p>
             </div>
           </div>
 
