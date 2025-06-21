@@ -445,7 +445,7 @@ export default function Words() {
       if (!user) return;
       const { data } = await supabase
         .from('learned_words')
-        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, is_new')
+        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, is_new')
         .eq('user_id', user.id);
       if (isCancelled && data) setUserWords(data);
       channel = supabase
