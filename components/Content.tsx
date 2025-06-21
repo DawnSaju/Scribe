@@ -92,7 +92,7 @@ export default function Content() {
   }, []);
 
   return (
-    <div className="w-full p-4 lg:p-0 mt-28 lg:mt-28 lg:py-38 lg:relative lg:bottom-40 p-4">
+    <div className="w-full p-4 lg:p-0 mt-28 lg:mt-28 lg:py-20 lg:relative lg:bottom-20">
       <section id="about">
         <div className="flex justify-center items-center">
           <div className="w-full max-w-6xl flex flex-col items-center">
