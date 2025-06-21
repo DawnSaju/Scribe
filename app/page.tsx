@@ -123,30 +123,6 @@ export default function Home() {
       <>
       <Hero/>
       <Content/>
-      <section className="bg-background relative py-16 lg:py-0">
-        <div className="container z-10 mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            viewport={{ once: true }}
-            className="flex flex-col items-center justify-center max-w-[540px] mx-auto gap-4"
-          >
-          <h1 className="text-4xl lg:text-6xl font-medium font-['DM Sans'] max-w-xl">
-            What our users say
-          </h1>
-          <h2 className="text-center justify-start text-color-blue-9 opacity-60 text-base lg:text-xl font-normal font-['DM_Sans'] leading-7">
-            See what our customers have to say about us.
-          </h2>
-          </motion.div>
-
-          <div className="flex justify-center gap-6 mt-10 [mask-image:linear-gradient(to_bottom,transparent,black_25%,black_75%,transparent)] max-h-[740px] overflow-hidden">
-            <TestimonialsColumn testimonials={firstColumn} duration={15} />
-            <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />
-            <TestimonialsColumn testimonials={thirdColumn} className="hidden lg:block" duration={17} />
-          </div>
-        </div>
-      </section>
       <section id="faq">
         <FAQSection/>
       </section>
