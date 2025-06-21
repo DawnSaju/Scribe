@@ -906,7 +906,7 @@ export default function Words() {
                   >
                     <div className="relative aspect-video">
                       {thumb ? (
-                        <Image src={thumb} alt={word.show_name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <Image src={word.platform.toLowerCase() === 'netflix' ? thumb : word.thumbnailimg} alt={word.show_name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                           <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
