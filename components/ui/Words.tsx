@@ -63,6 +63,7 @@ export default function Words() {
     definition: string;
     example: string;
     platform: string;
+    thumbnailimg: string;
     show_name: string;
     season: number;
     episode: number;
