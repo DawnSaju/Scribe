@@ -36,14 +36,14 @@ export default function Home() {
           <ProductDemo
             className="dark:hidden block"
             animations="from-center"
-            videoSrc="https://youtu.be/WsvjIrHmDrw"
+            videoSrc="https://www.youtube.com/embed/WsvjIrHmDrw?si=qaZw0XEH-DyKoa2T"
             thumbnailSrc="./Scribe_thumbnail.png"
             thumbnailAlt="Product Demo"
           />
           <ProductDemo
             className="hidden dark:block"
             animations="from-center"
-            videoSrc="https://youtu.be/WsvjIrHmDrw"
+            videoSrc="https://www.youtube.com/embed/WsvjIrHmDrw?si=qaZw0XEH-DyKoa2T"
             thumbnailSrc="https://startup-template-sage.vercel.app/hero-dark.png"
             thumbnailAlt="Product Demo"
           />
