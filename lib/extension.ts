@@ -8,6 +8,7 @@ type Word = {
   platform: string;
   show_name: string;
   thumbnailimg: string;
+  timeTracked: number;
   season: number;
   episode: number;
 };

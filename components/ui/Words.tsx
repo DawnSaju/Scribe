@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/utils/supabase/client";
-import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Play, XIcon, Monitor, Loader2, ArrowRight, ArrowLeft, HelpCircle, RefreshCw, SettingsIcon, PowerIcon, Bookmark, MessageSquare, Tv2, CalendarDays, Trash2, MoreHorizontal, Plus, TrendingUp, RotateCcw } from "lucide-react";
+import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Play, XIcon, Monitor, Loader2, ArrowRight, ArrowLeft, HelpCircle, RefreshCw, SettingsIcon, PowerIcon, Bookmark, MessageSquare, Tv2, CalendarDays, Trash2, MoreHorizontal, Plus, TrendingUp, RotateCcw, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ExtensionConnector } from "@/lib/extension";
 import { RiGithubFill, RiNetflixFill, RiYoutubeFill } from "@remixicon/react";
@@ -61,6 +61,7 @@ export default function Words() {
     definition: string;
     example: string;
     thumbnailimg: string;
+    timeTracked: number;
     platform: string;
     show_name: string;
     season: number;
@@ -97,8 +98,23 @@ export default function Words() {
   const [groupInput, setgroupInput] = useState("");
   const noOfShows = new Set(userWords.map(word => word.show_name)).size;
 
+  const totalTimeTrackedInSeconds = userWords.reduce((total, word) => total + (word.timeTracked || 0), 0);
+  const totalMinutes = totalTimeTrackedInSeconds / 60;
+
+  let timeValue: number;
+  let timeUnit: string;
+
+  if (totalMinutes < 60) {
+    timeValue = Math.round(totalMinutes);
+    timeUnit = "mins";
+  } else {
+    const totalHours = totalMinutes / 60;
+    timeValue = parseFloat(totalHours.toFixed(1));
+    timeUnit = "hrs";
+  }
+
   const userStats: Stat[] = [
-    { label: "Spent", value: 5, unit: "hrs" },
+    { label: "Spent", value: timeValue, unit: timeUnit },
     { label: "Watched", value: noOfShows, unit: "shows" },
   ];
 
@@ -350,6 +366,7 @@ export default function Words() {
           show_name: word.show_name,
           platform: word.platform,
           thumbnailimg: word.thumbnailimg,
+          timeTracked: word.timeTracked,
           season: word.season,
           episode: word.episode,
       })
@@ -436,7 +453,7 @@ export default function Words() {
       setLoading(true);
       const { data } = await supabase
         .from('learned_words')
-        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, is_new')
+        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, timeTracked, is_new')
         .eq('user_id', user.id);
       if (isCancelled && data) setUserWords(data);
       channel = supabase
@@ -807,7 +824,6 @@ export default function Words() {
                 ...col.words.map(word => {
                   const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
                   const thumb = netflixThumbnailUrl[thumbKey];
-                  console.log("PLATFORMMMM:", word.platform.toLowerCase())
                   return (
                     <div key={word.id} className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                       <div className="relative aspect-video">
@@ -835,16 +851,16 @@ export default function Words() {
                             <PlatformIcon platform={word.platform} className="h-5 w-5" />
                           </div>
                         )}
-                        { word.platform.toLowerCase() === "netflix" ? (
-                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                          <Tv2 className="h-3.5 w-3.5 mr-1" />
-                          S{word.season} • E{word.episode}
-                        </Badge>
-                        ) : (
-                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                          <Tv2 className="h-3.5 w-3.5 mr-1" />
-                          YouTube
-                        </Badge>
+                        {word.platform.toLowerCase() === "netflix" ? (
+                          <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
+                            <Tv2 className="h-3.5 w-3.5 mr-1" />
+                            S{word.season} • E{word.episode}
+                          </Badge>
+                          ) : (
+                          <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
+                            <Clock className="h-3.5 w-3.5" />
+                            {word.timeTracked}s
+                          </Badge>
                         )}
                       </div>
                       <div className="p-5">
@@ -945,8 +961,8 @@ export default function Words() {
                         </Badge>
                         ) : (
                         <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                          <Tv2 className="h-3.5 w-3.5 mr-1" />
-                          YouTube
+                          <Clock className="h-3.5 w-3.5" />
+                          {word.timeTracked}s
                         </Badge>
                       )}
                     </div>
