@@ -60,8 +60,8 @@ export default function Words() {
     is_new?: boolean;
     definition: string;
     example: string;
-    platform: string;
     thumbnailimg: string;
+    platform: string;
     show_name: string;
     season: number;
     episode: number;
@@ -85,7 +85,7 @@ export default function Words() {
   const [extensionAvailable, setExtensionAvailable] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
   const [modalType, setModalType] = useState<'install' | 'manage'>('install');
-  const [thumbnailUrl, setthumbnailUrl] = useState<{ [key: string]: string | null }>({});
+  const [netflixThumbnailUrl, setnetflixThumbnailUrl] = useState<{ [key: string]: string | null }>({});
   const [openPlatforms, setOpenPlatforms] = useState(false);
   const [copied, setCopied] = useState(false);
   const [currentStep, setcurrentStep] = useState(1);
@@ -318,14 +318,14 @@ export default function Words() {
 
   async function getShowThumbnail(showName: string, season: number, episode: number) {
      const key = `${showName}_${season}_${episode}`;
-     if (thumbnailUrl[key]) return; 
+     if (netflixThumbnailUrl[key]) return; 
 
      const res = await fetch(
        `https://www.omdbapi.com/?t=${encodeURIComponent(showName)}&apikey=7c57638d`
      );
      const data = await res.json();
 
-     setthumbnailUrl(prev => ({
+     setnetflixThumbnailUrl(prev => ({
        ...prev,
        [key]: (data.Response === "True" && data.Poster && data.Poster !== "N/A") ? data.Poster : null
      }));
@@ -349,6 +349,7 @@ export default function Words() {
           example: word.example,
           show_name: word.show_name,
           platform: word.platform,
+          thumbnailimg: word.thumbnailimg,
           season: word.season,
           episode: word.episode,
       })
@@ -359,7 +360,7 @@ export default function Words() {
       }
 
       getShowThumbnail(word.show_name, word.season, word.episode);
-      console.log(thumbnailUrl)
+      console.log(netflixThumbnailUrl)
     });
 
     return () => {
@@ -804,7 +805,8 @@ export default function Words() {
                 </div>,
                 ...col.words.map(word => {
                   const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
-                  const thumb = thumbnailUrl[thumbKey];
+                  const thumb = netflixThumbnailUrl[thumbKey];
+                  console.log("PLATFORMMMM:", word.platform.toLowerCase())
                   return (
                     <div key={word.id} className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                       <div className="relative aspect-video">
@@ -879,7 +881,7 @@ export default function Words() {
               )}
               {userWords.filter(word => !groups.some(col => col.words.some(w => w.id === word.id))).map((word) => {
                 const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
-                const thumb = thumbnailUrl[thumbKey];
+                const thumb = netflixThumbnailUrl[thumbKey];
                 const isSelected = selected.includes(word.id);
                 return (
                   <div
@@ -892,8 +894,20 @@ export default function Words() {
                     key={word.id}
                   >
                     <div className="relative aspect-video">
-                      {thumb ? (
-                        <Image src={word.platform.toLowerCase() === 'netflix' ? thumb : word.thumbnailimg} alt={word.show_name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                      {word.platform.toLowerCase() === 'netflix' ? (
+                        <Image
+                          src={thumb || "./default.svg"}
+                          alt={word.show_name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : word.platform.toLowerCase() === 'youtube' ? (
+                        <Image
+                          src={word.thumbnailimg}
+                          alt={word.show_name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                           <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />

@@ -7,6 +7,7 @@ type Word = {
   example: string;
   platform: string;
   show_name: string;
+  thumbnailimg: string;
   season: number;
   episode: number;
 };
