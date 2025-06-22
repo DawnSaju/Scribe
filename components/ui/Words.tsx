@@ -52,6 +52,7 @@ function useMediaQuery(query: string): boolean {
 export default function Words() {
   type UserData = {
     name?: string; 
+    XP: number;
     [key: string]: unknown;
   };
 
@@ -772,11 +773,11 @@ export default function Words() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Time Studied</CardDescription>
-            <CardTitle className="text-2xl">0h 0m</CardTitle>
+            <CardDescription>Total Points</CardDescription>
+            <CardTitle className="text-2xl">{userData?.XP} XP</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">This week</p>
+            <p className="text-xs text-muted-foreground">Good Progress!</p>
           </CardContent>
         </Card>
       </div>
