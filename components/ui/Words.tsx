@@ -52,7 +52,7 @@ function useMediaQuery(query: string): boolean {
 export default function Words() {
   type UserData = {
     name?: string; 
-    XP: number;
+    XP?: number;
     [key: string]: unknown;
   };
 
