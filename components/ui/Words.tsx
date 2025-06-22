@@ -558,6 +558,7 @@ export default function Words() {
   const PlatformIcon = ({ platform, className }: { platform: string; className?: string }) => {
     const icons: Record<string, React.JSX.Element> = {
       netflix: <RiNetflixFill className={`text-red-500 ${className}`} />,
+      youtube: <RiYoutubeFill className={`text-red-500 ${className}`} />,
       hulu: <Tv2 className={className} />, 
       disney: <Tv2 className={className} />,
       prime: <Tv2 className={className} />,
@@ -810,8 +811,20 @@ export default function Words() {
                   return (
                     <div key={word.id} className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                       <div className="relative aspect-video">
-                        {thumb ? (
-                          <Image src={word.platform.toLowerCase() === 'netflix' ? thumb : word.thumbnailimg} alt={word.show_name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                        {word.platform.toLowerCase() === 'netflix' ? (
+                          <Image
+                            src={thumb || "./default.svg"}
+                            alt={word.show_name}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : word.platform.toLowerCase() === 'youtube' ? (
+                          <Image
+                            src={word.thumbnailimg}
+                            alt={word.show_name}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
                         ) : (
                           <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
                             <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
@@ -822,10 +835,17 @@ export default function Words() {
                             <PlatformIcon platform={word.platform} className="h-5 w-5" />
                           </div>
                         )}
+                        { word.platform.toLowerCase() === "netflix" ? (
                         <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
                           <Tv2 className="h-3.5 w-3.5 mr-1" />
                           S{word.season} • E{word.episode}
                         </Badge>
+                        ) : (
+                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
+                          <Tv2 className="h-3.5 w-3.5 mr-1" />
+                          YouTube
+                        </Badge>
+                        )}
                       </div>
                       <div className="p-5">
                         <div className="flex justify-between items-start gap-3 mb-3">
@@ -918,10 +938,17 @@ export default function Words() {
                           <PlatformIcon platform={word.platform} className="h-5 w-5" />
                         </div>
                       )}
-                      <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                        <Tv2 className="h-3.5 w-3.5 mr-1" />
-                        S{word.season} • E{word.episode}
-                      </Badge>
+                      {word.platform.toLowerCase() === "netflix" ? (
+                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
+                          <Tv2 className="h-3.5 w-3.5 mr-1" />
+                          S{word.season} • E{word.episode}
+                        </Badge>
+                        ) : (
+                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
+                          <Tv2 className="h-3.5 w-3.5 mr-1" />
+                          YouTube
+                        </Badge>
+                      )}
                     </div>
                     <div className="p-5">
                       <div className="flex justify-between items-start gap-3 mb-3">
