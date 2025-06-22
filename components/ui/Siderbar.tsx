@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase/client";
@@ -9,18 +9,10 @@ import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { useSupabase } from "@/db/SupabaseProvider";
 
 export default function Sidebar() {
-  type UserData = {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      full_name?: string;
-      avatar_url?: string;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
+  const { user } = useSupabase();
 
   type SearchUser = {
     id: string;
@@ -29,24 +21,11 @@ export default function Sidebar() {
     avatar_url?: string;
   };
   
-  const [userData, setUserData] = useState<UserData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUserData(data.user as unknown as UserData);
-      } else {
-        console.error(error);
-      }
-    }
-    checkUser();
-  }, []);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -59,7 +38,7 @@ export default function Sidebar() {
     const res = await fetch('/api/searchUsers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: userData?.id, userinput: query }),
+      body: JSON.stringify({ id: user?.id, userinput: query }),
     });
     const { users } = await res.json();
     setSearchResults(users || []);
@@ -72,7 +51,7 @@ export default function Sidebar() {
         .from('friend_requests')
         .insert([
           {
-            sender_id: userData?.id,
+            sender_id: user?.id,
             receiver_id: reciever.id,
             status: 'pending'
           }
@@ -109,15 +88,15 @@ export default function Sidebar() {
           <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-gray-700 bg-white rounded-full">
             <Image
               className="rounded-full object-cover"
-              src={userData?.user_metadata?.avatar_url || './default.svg'}
-              alt={userData?.email || 'User avatar'}
+              src={user?.user_metadata?.avatar_url || './default.svg'}
+              alt={user?.email || 'User avatar'}
               width={70}
               height={70}
             />
           </div>
         </div>
         <div className="text-center">
-          <h1 className="capitalize text-lg font-semibold">{userData?.user_metadata?.full_name}</h1>
+          <h1 className="capitalize text-lg font-semibold">{user?.user_metadata?.full_name}</h1>
         </div>
       </div>
       <div className="flex justify-center gap-6 my-4">

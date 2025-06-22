@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, UploadIcon } from "lucide-react";
@@ -16,67 +15,51 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useSupabase } from "@/db/SupabaseProvider";
 
 export default function Settings() {
-  type UserData = {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      name?: string;
-      avatar_url?: string;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
-  
   const router = useRouter();
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const { user, supabase } = useSupabase();
   const [value, setValue] = useState('');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const namelength = 32;
   const isError = value.length > namelength;
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUserData(data.user as unknown as UserData);
-        // console.log(data?.user);
-      } else {
-        console.error(error);
-      }
-    }
-    checkUser();
-  }, [])
   
   useEffect(() => {
-    setValue(userData?.user_metadata?.name || "");
-  }, [userData]);
+    setValue(user?.user_metadata?.name || "");
+  }, [user]);
 
   const deleteModal = () => {
     setDeleteModalOpen(true);
   }
 
   const handleDeleteACc = async () => {
-    if (!userData) {
-        return "NOTOO"
+    if (!user) {
+        return;
     }
     setIsDeleting(true);
-    // console.log("USER DATA:", userData);
-    const data = await fetch('/api/userControl/deleteUser', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: userData.id }),
-    });
+    
+    try {
+      const response = await fetch('/api/userControl/deleteUser', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: user.id }),
+      });
 
-    if (data) {
+      if (response.ok) {
+          await supabase.auth.signOut();
+          router.push("/auth");
+      } else {
+          console.error("Failed to delete account");
+      }
+    } catch (error) {
+        console.error("An unexpected error occurred:", error);
+    } finally {
         setIsDeleting(false);
-        router.push("/auth")
-    } else {
-        console.error("data not found")
+        setDeleteModalOpen(false);
     }
   };
 
@@ -95,7 +78,7 @@ export default function Settings() {
                     <p className="font-['DM Sans'] text-sm text-black/50">Avatar is your profile picture - everyone who visits your profile will see this.</p>
                 </div>
                 <div className="flex flex-row items-center gap-4">
-                    <img className="w-10 h-10 rounded-full object-cover" src={ userData?.user_metadata?.avatar_url ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(userData?.email ?? "")}&background=random&color=fff&size=70`} alt="User profile"/>
+                    <img className="w-10 h-10 rounded-full object-cover" src={ user?.user_metadata?.avatar_url ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.email ?? "")}&background=random&color=fff&size=70`} alt="User profile"/>
                     <div className="relative">
                         <Button type="button" variant="ghost" className="text-black border border-black/10 hover:bg-transparent flex items-center gap-2" asChild>
                             <label htmlFor="profile-upload" className="cursor-pointer">

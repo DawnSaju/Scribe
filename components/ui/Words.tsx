@@ -32,6 +32,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useSupabase } from "@/db/SupabaseProvider";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
@@ -50,11 +51,7 @@ function useMediaQuery(query: string): boolean {
 }
 
 export default function Words() {
-  type UserData = {
-    name?: string; 
-    XP?: number;
-    [key: string]: unknown;
-  };
+  const { user } = useSupabase();
 
   type Word = {
     id: string;
@@ -75,7 +72,6 @@ export default function Words() {
   | { type: 'DATA_UPDATE'; words: string[] }
   | { type: string; [key: string]: unknown }; 
 
-  const [userData, setUserData] = useState<UserData>({});
   const [userWords, setUserWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -198,7 +194,7 @@ export default function Words() {
   useEffect(() => {
     const checkInstallProgress = async () => {
       void currentStep;
-      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       const installProgress = user?.user_metadata?.install_progress;
       
       if (installProgress) {
@@ -212,13 +208,13 @@ export default function Words() {
     };
 
     checkInstallProgress();
-  }, []);
+  }, [user]);
 
   const handleNextStep = async (nextStep: number) => {
     setInstallGuide(nextStep);
     setcurrentStep(nextStep);
     
-    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     await supabase.auth.updateUser({
       data: { 
         ...user?.user_metadata,
@@ -234,9 +230,10 @@ export default function Words() {
     setConnected(false);
     setConnectionError(false);
     
+    if (!user) return;
     await supabase.auth.updateUser({
       data: { 
-        ...userData,
+        ...user?.user_metadata,
         install_progress: 1 
       }
     });
@@ -343,15 +340,9 @@ export default function Words() {
   useEffect(() => {
     const unsubscribe = ExtensionConnector.listenForWordMessages(async (word) => {
       console.log('Got word from extension:', word);
-      const { data: user, error: userError } = await supabase.auth.getUser();
-
-      if (userError) {
-        console.error("Failed to get current user:",userError?.message);
-        return;
-      }
-      
+      if (!user) return;
       const { error: insertError } = await supabase.from("learned_words").upsert({
-          user_id: user.user.id,
+          user_id: user.id,
           word: word.word,
           part_of_speech: word.part_of_speech,
           definition: word.definition,
@@ -374,7 +365,7 @@ export default function Words() {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [user]);
 
     useEffect(() => {
     userWords.forEach(word => {
@@ -384,9 +375,8 @@ export default function Words() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       const has_completed_tour = user?.user_metadata?.has_completed_tour;
-      setUserData(user?.user_metadata || {});
 
       if (has_completed_tour == undefined) {
         setTimeout(() => setWalkthrough(true), 1500);
@@ -394,11 +384,10 @@ export default function Words() {
     };
 
     checkUser();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const streak = async () => {
-      const { data: { user }} = await supabase.auth.getUser();
       if (!user) {
         return;
       }
@@ -436,14 +425,14 @@ export default function Words() {
       }
     }
     streak();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
     let isCancelled = true;
     const getWords = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setLoading(true);
       const { data } = await supabase
         .from('learned_words')
         .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, is_new')
@@ -475,7 +464,7 @@ export default function Words() {
       isCancelled = false;
       if (channel) supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const loadExtensionId = async () => {
@@ -491,23 +480,20 @@ export default function Words() {
   }, []);
 
   const completeTour = async () => {
+    if (!user) return;
     setWalkthrough(false);
     setHasCompletedWalkThrough(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { 
-          ...user.user_metadata,
-          has_completed_tour: true,
-        }
-      });
-
-      console.log(HasCompletedWalkThrough);
-
-      if (updateError) {
-        console.error('Error updating user metadata:', updateError.message);
+    const { error: updateError } = await supabase.auth.updateUser({
+      data: { 
+        ...user.user_metadata,
+        has_completed_tour: true,
       }
+    });
+
+    console.log(HasCompletedWalkThrough);
+
+    if (updateError) {
+      console.error('Error updating user metadata:', updateError.message);
     }
   };
 
@@ -720,7 +706,7 @@ export default function Words() {
       >
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-            Welcome back, {userData.name}
+            Welcome back, {user?.user_metadata.name}
           </h1>
           <p className="text-muted-foreground mt-1 sm:mt-0">
             Continue your learning journey
@@ -774,10 +760,10 @@ export default function Words() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Points</CardDescription>
-            <CardTitle className="text-2xl">{userData?.XP} XP</CardTitle>
+            <CardTitle className="text-2xl">{user?.user_metadata.XP || 0} XP</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">Good Progress!</p>
+            <p className="text-xs text-muted-foreground">{user?.user_metadata.XP ? "Good Progress!": "Start learning!"}</p>
           </CardContent>
         </Card>
       </div>

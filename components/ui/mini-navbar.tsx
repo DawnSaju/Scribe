@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/utils/supabase/client';
+import { useSupabase } from '@/db/SupabaseProvider';
 
 const AnimatedNavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
   const defaultTextColor = 'text-gray-700';
@@ -23,24 +23,8 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [headerShapeClass, setHeaderShapeClass] = useState('rounded-full');
   const shapeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isSignedIn, setIsSignedIn] = useState(false);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsSignedIn(!!user);
-    };
-
-    checkUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsSignedIn(!!session?.user);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  const { user } = useSupabase();
+  const isSignedIn = !!user;
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);

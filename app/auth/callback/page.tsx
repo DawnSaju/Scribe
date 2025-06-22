@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
+import { useSupabase } from '@/db/SupabaseProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,7 @@ const CallbackPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const { user, isLoading } = useSupabase();
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -20,17 +22,17 @@ const CallbackPage = () => {
       return;
     }
 
+    if (isLoading) return;
+
     const handleCallback = async () => {
       try {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError || !sessionData.session?.user) {
-          console.error('Error fetching session:', sessionError?.message);
+        
+        if (!user) {
+          console.error('No user found in session');
           router.push('/auth');
           return;
         }
 
-        const user = sessionData.session.user;
         const hasOnboarded = user.user_metadata?.has_onboarded;
         const currentXP = user.user_metadata?.XP ?? 0;
 
@@ -59,9 +61,11 @@ const CallbackPage = () => {
     };
 
     handleCallback();
-  }, [searchParams, router]);
+  }, [searchParams, router, user, isLoading]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || isLoading) {
+    return <div>Loading...</div>;
+  } 
 
   return null;
 };

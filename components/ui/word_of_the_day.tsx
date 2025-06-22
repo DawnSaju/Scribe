@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Volume2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { createBrowserClient } from '@supabase/ssr';
-import { useUser } from "@/hooks/use-user";
-import { useRouter } from "next/navigation";
+import { useSupabase } from "@/db/SupabaseProvider";
 
 interface Phonetic {
   text: string;
@@ -48,26 +47,25 @@ export default function WordOfTheDay() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-  const { user, loading: userLoading } = useUser();
-  const router = useRouter();
+  const { user, isLoading: userLoading } = useSupabase();
 
-  const isSameDay = (date1: Date, date2: Date) => {
+  const isSameDay = useCallback((date1: Date, date2: Date) => {
     return (
       date1.getFullYear() === date2.getFullYear() &&
       date1.getMonth() === date2.getMonth() &&
       date1.getDate() === date2.getDate()
     );
-  };
+  }, []);
 
-  const getAudioUrl = (phonetics: Phonetic[]): string | null => {
+  const getAudioUrl = useCallback((phonetics: Phonetic[]): string | null => {
     const phoneticWithAudio = phonetics.find(p => p.audio);
     if (phoneticWithAudio?.audio) {
       return phoneticWithAudio.audio;
     }
     return `https://api.dictionaryapi.dev/media/pronunciations/en/${wordData?.word}.mp3`;
-  };
+  }, [wordData]);
 
-  const fetchWordFromAPI = async () => {
+  const fetchWordFromAPI = useCallback(async () => {
     if (retryCount >= MAX_RETRIES) {
       console.log("Max retries reached. Please try again later.");
       setIsLoading(false);
@@ -106,9 +104,9 @@ export default function WordOfTheDay() {
       setRetryCount(prev => prev + 1);
       return fetchWordFromAPI();
     }
-  };
+  }, []);
 
-  const fetchWord = async () => {
+  const fetchWord = useCallback(async () => {
     if (userLoading) {
       return;
     }
@@ -124,18 +122,15 @@ export default function WordOfTheDay() {
     setAudioavailable(false);
 
     try {
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !currentUser) {
+      if (!user) {
         setError("Session expired. Please sign in again.");
-        router.refresh(); 
         return;
       }
 
       const { data: existingWord, error: fetchError } = await supabase
         .from('word_of_the_day')
         .select('*')
-        .eq('id', currentUser.id)
+        .eq('id', user.id)
         .single();
 
       if (fetchError) {
@@ -161,7 +156,7 @@ export default function WordOfTheDay() {
         const { error: upsertError } = await supabase
           .from('word_of_the_day')
           .upsert({
-            id: currentUser.id,
+            id: user.id,
             word: newWordData.word,
             phonetic: newWordData.phonetic,
             phonetics: newWordData.phonetics,
@@ -173,7 +168,6 @@ export default function WordOfTheDay() {
           console.error('Error storing word:', upsertError);
           if (upsertError.code === '42501') {
             setError("Permission denied. Please try signing out and back in.");
-            router.refresh();
           } else {
             setError("Error saving word. Please try again.");
           }
@@ -200,15 +194,15 @@ export default function WordOfTheDay() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, userLoading, supabase, isSameDay, fetchWordFromAPI]);
 
   useEffect(() => {
     if (!userLoading) {
       fetchWord();
     }
-  }, [user, userLoading]);
+  }, [userLoading, fetchWord]);
 
-  const handlePlayAudio = async () => {
+  const handlePlayAudio = useCallback(async () => {
     if (!wordData) return;
     
     setIsPlaying(true);
@@ -227,7 +221,7 @@ export default function WordOfTheDay() {
       console.error('Error playing audio:', error);
       setIsPlaying(false);
     }
-  };
+  }, [wordData, getAudioUrl]);
 
   if (error) {
     return (

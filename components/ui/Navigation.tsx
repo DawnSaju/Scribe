@@ -6,24 +6,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { useSupabase } from "@/db/SupabaseProvider";
 
 export default function Navigation() {
-  type UserData = {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      name?: string;
-      avatar_url?: string;
-      last_sign_in_at?: string;
-      streakCount: number;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
-
-  const [userData, setUserData] = useState<UserData | null>(null);
   const [streak, setStreak] = useState(0);
-  const router = useRouter()
+  const router = useRouter();
+  const { user } = useSupabase();
 
   const handleLogOut = async () => {
       const { error } = await supabase.auth.signOut()
@@ -35,27 +23,14 @@ export default function Navigation() {
   }
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUserData(data.user as unknown as UserData);
-        console.log(data?.user)
-      } else {
-        console.error(error);
-      }
-    }
-    checkUser();
-  }, [])
-
-  useEffect(() => {
     const streak = async () => {
-      if (!userData) {
+      if (!user) {
         return;
       }
       
       const today = new Date();
-      const prevSignin = userData.user_metadata?.last_sign_in_at ? new Date(userData.user_metadata.last_sign_in_at) : null;
-      let newStreak = userData.user_metadata?.streakCount || 0;
+      const prevSignin = user.user_metadata?.last_sign_in_at ? new Date(user.user_metadata.last_sign_in_at) : null;
+      let newStreak = user.user_metadata?.streakCount || 0;
       let update = false;
 
       if (!prevSignin) {
@@ -78,7 +53,7 @@ export default function Navigation() {
       if (update) {
         await supabase.auth.updateUser({
           data: {
-            ...userData.user_metadata,
+            ...user.user_metadata,
             last_sign_in_at: today.toISOString(),
             streakCount: newStreak,
           }
@@ -86,7 +61,7 @@ export default function Navigation() {
       }
     }
     streak();
-  }, [userData]);
+  }, [user]);
 
   return (
     <div className="flex h-full flex-col justify-between p-4">

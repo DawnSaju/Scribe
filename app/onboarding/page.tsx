@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabase/client"; 
+import { useSupabase } from "@/db/SupabaseProvider";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,7 +15,9 @@ export default function Onboarding() {
     const [dailyTime, setDailyTime] = useState<string | null>(null);
     const [proficiencyLevel, setProficiencyLevel] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
+    const { user } = useSupabase();
     
     const goals = [
         { name: "Improve vocabulary", description: "Expand your word knowledge naturally", icon: "📚" },
@@ -84,36 +87,46 @@ export default function Onboarding() {
             return;
         }
 
-        const { error: metadataError } = await supabase.auth.updateUser({
-            data: { has_onboarded: true },
-        });
-
-        if (metadataError) {
-            console.error("Failed to update user metadata:", metadataError.message);
+        if (!user) {
+            setError("User session not found. Please signin again");
             return;
         }
+        
+        setIsSubmitting(true);
+        setError(null)
 
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        try {
+            const [metadataResult, onboardingResult] = await Promise.all([
+                supabase.auth.updateUser({
+                    data: { has_onboarded: true},
+                }),
+                supabase.from('onboarding').upsert({
+                    id: user.id,
+                    selected_platform: selectedPlatform,
+                    learning_goal: learningGoal,
+                    daily_time: dailyTime,
+                    proficiency_level: proficiencyLevel
+                })
+            ])
 
-        if (userError || !userData?.user?.id) {
-            console.error("Failed to get current user:", userError?.message);
-            return;
+            if (metadataResult.error) {
+                console.error("Failed to update user metadat:", metadataResult.error.message)
+            }
+
+            if (onboardingResult.error) {
+                console.error("Failed to insert onboarding data:", onboardingResult.error.message);
+                setError("Failed to save onboarding data. Please try again.");
+                return;
+            }
+
+            router.push('/dashboard');
+        } catch (error) {
+            console.error("Onboarding submission error:", error);
+            setError("An unexpected error occured. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
 
-        const { error: insertError } = await supabase.from('onboarding').upsert({
-            id: userData.user.id,
-            selected_platform: selectedPlatform,
-            learning_goal: learningGoal,
-            daily_time: dailyTime,
-            proficiency_level: proficiencyLevel,
-        });
-
-        if (insertError) {
-            console.error("Failed to insert onboarding data:", insertError.message);
-            return;
-        }
-
-        router.push("/dashboard");
     };
 
     const renderStep = () => {
@@ -317,8 +330,8 @@ export default function Onboarding() {
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
-                        <Button onClick={submitButton} size="lg">
-                            Go to Dashboard
+                        <Button onClick={submitButton} disabled={isSubmitting}>
+                            {isSubmitting ? "Saving..." : "Complete Setup"}
                         </Button>
                     </div>
                 );

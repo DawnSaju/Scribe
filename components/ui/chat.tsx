@@ -7,27 +7,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Markdown from 'react-markdown';
+import { useSupabase } from '@/db/SupabaseProvider';
 
 export default function Chat() {
-  type UserData = {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      name?: string;
-      avatar_url?: string;
-      last_sign_in_at?: string;
-      streakCount: number;
-      XP: number;
-      [key: string]: unknown;
-    };
-    [key: string]: unknown;
-  };
+  const { user } = useSupabase();
   
   const [messages, setMessages] = useState<{
     role: 'user' | 'assistant';
     content: string;
   }[]>([]);
-  const [userData, setUserData] = useState<UserData | null>(null);
   const [input, setInput] = useState('');
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,37 +24,27 @@ export default function Chat() {
   const [XPpoints, setXPpoints] = useState(0);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUserData(data.user as unknown as UserData);
-        setIsReady(true);
-        setXPpoints(data.user?.user_metadata?.XP ?? 0);
-        // console.log(data?.user);
-      } else {
-        console.error(error);
-      }
+    if (user) {
+      setIsReady(true);
+      setXPpoints(user.user_metadata?.XP ?? 0);
     }
-    checkUser();
-  }, [])
+  }, [user])
 
   const handleUserXP = async (increment: number) => {
     setXPpoints(prevXP => {
       const newXP = Math.floor((prevXP ?? 0) + increment);
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          supabase.auth.updateUser({
-            data: {
-              ...user.user_metadata,
-              XP: newXP
-            }
-          }).then(({ error: updateError }) => {
-            if (updateError) {
-              console.error('Failed to update user metadata:', updateError.message);
-            }
-          });
-        }
-      });
+      if (user) {
+        supabase.auth.updateUser({
+          data: {
+            ...user.user_metadata,
+            XP: newXP
+          }
+        }).then(({ error: updateError }) => {
+          if (updateError) {
+            console.error('Failed to update user metadata:', updateError.message);
+          }
+        });
+      }
       return newXP;
     });
   }
@@ -82,7 +60,7 @@ export default function Chat() {
       const { data: WordOfTheDay, error: fetchError } = await supabase
         .from('word_of_the_day')
         .select('*')
-        .eq('id', userData?.id)
+        .eq('id', user?.id)
         .single();
 
       if (fetchError) {
@@ -95,10 +73,10 @@ export default function Chat() {
       const { data: words } = await supabase
         .from("learned_words") 
         .select('id, word, part_of_speech, is_new, definition, example, platform, show_name, season, episode')
-        .eq("user_id", userData?.id);
+        .eq("user_id", user?.id);
       const data = await fetch("/api/aiChat", {
         method: "POST",
-        body: JSON.stringify({messageHistory: allMessages, word_of_the_day: WordOfTheDay, user: userData?.user_metadata?.name, userWordsData: words}),
+        body: JSON.stringify({messageHistory: allMessages, word_of_the_day: WordOfTheDay, user: user?.user_metadata?.name, userWordsData: words}),
       });
       
       const json = await data.json();
