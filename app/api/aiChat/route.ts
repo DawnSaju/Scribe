@@ -35,13 +35,18 @@ export async function POST(request: Request) {
     let jsonResult;
     try {
       jsonResult = typeof result === "string" ? JSON.parse(result) : result;
-    } catch (error) {
+    } catch (error: unknown) {
       jsonResult = { message: result };
+      if (error instanceof Error) {
+        console.log(error.message);
+      }
     }
 
     return NextResponse.json({ data: jsonResult, status: 200});
-  } catch (error: any) {
-    console.log("Chat API Error:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500});
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.log("Chat API Error:", error.message);
+    }
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500});
   }
 }
