@@ -650,7 +650,7 @@ export default function Words() {
         ...col,
         words: col.words.filter(word => word.id !== id)
       })));
-      const { data, error } = await supabase
+      const { error } = await supabase
       .from('learned_words')
       .update({ group_name: null })
       .eq('id', id)
