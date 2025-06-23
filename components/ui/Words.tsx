@@ -638,18 +638,26 @@ export default function Words() {
 
     if (type === "grid") {
       setUserWords(prev => prev.filter(word => word.id !== id));
-    } else if (type == "group") {
+      const { error } = await supabase
+      .from('learned_words')
+      .delete()
+      .eq('id', id);
+      if (error) {
+        console.error('Error removing the word:', error.message);
+      }
+    } else if (type === "group") {
       setgroups(prev => prev.map(col => ({
         ...col,
         words: col.words.filter(word => word.id !== id)
       })));
-    }
-    const { error } = await supabase
-    .from('learned_words')
-    .delete()
-    .eq('id', id);
-    if (error) {
-      console.error('Error removing the word:', error.message);
+      const { data, error } = await supabase
+      .from('learned_words')
+      .update({ group_name: null })
+      .eq('id', id)
+      .select();
+      if (error) {
+        console.error("Error removing the word from group:", error.message)
+      }
     }
   }
 
