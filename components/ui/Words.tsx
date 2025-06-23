@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/utils/supabase/client";
-import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Play, XIcon, Monitor, Loader2, ArrowRight, ArrowLeft, HelpCircle, RefreshCw, SettingsIcon, PowerIcon, Bookmark, MessageSquare, Tv2, CalendarDays, Trash2, MoreHorizontal, Plus, TrendingUp, RotateCcw, Clock } from "lucide-react";
+import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Play, XIcon, Monitor, Loader2, ArrowRight, ArrowLeft, HelpCircle, RefreshCw, SettingsIcon, PowerIcon, Bookmark, MessageSquare, Tv2, CalendarDays, Trash2, MoreHorizontal, Plus, TrendingUp, RotateCcw, Clock, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ExtensionConnector } from "@/lib/extension";
 import { RiGithubFill, RiNetflixFill, RiYoutubeFill } from "@remixicon/react";
@@ -66,6 +66,7 @@ export default function Words() {
     show_name: string;
     season: number;
     episode: number;
+    group_name?: string | null;
   };
 
   type ExtensionMessage =
@@ -453,15 +454,18 @@ export default function Words() {
       setLoading(true);
       const { data } = await supabase
         .from('learned_words')
-        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, timeTracked, is_new')
+        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, timeTracked, is_new, group_name')
         .eq('user_id', user.id);
+      
       if (isCancelled && data) setUserWords(data);
+      
       channel = supabase
         .channel('learned_words_realtime')
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'learned_words', filter: `user_id=eq.${user.id}` },
           payload => {
+            console.log('Realtime update received:', payload);
             setUserWords(prev => {
                 if (payload.eventType === 'INSERT') {
                     return [...prev, payload.new as Word];
@@ -483,6 +487,21 @@ export default function Words() {
       if (channel) supabase.removeChannel(channel);
     };
   }, [user]);
+
+  useEffect(() => {
+    const wordsByGroup = userWords.reduce((acc, word) => {
+      if (word.group_name && word.group_name.trim() !== '') {
+        if (!acc[word.group_name]) {
+          acc[word.group_name] = [];
+        }
+        acc[word.group_name].push(word);
+      }
+      return acc;
+    }, {} as Record<string, Word[]>);
+
+    const newGroups = Object.entries(wordsByGroup).map(([name, words]) => ({ name, words }));
+    setgroups(newGroups);
+  }, [userWords]);
 
   useEffect(() => {
     const loadExtensionId = async () => {
@@ -653,15 +672,54 @@ export default function Words() {
   const opengroupModal = () => setShowgroupModal(true);
   const closegroupModal = () => setShowgroupModal(false);
 
-  const addTogroup = () => {
+  const addTogroup = async () => {
     if (!groupInput.trim() || selected.length === 0) {
       return;
     }
-    const words = userWords.filter(w => selected.includes(w.id));
-    setgroups(prev => [...prev, { name: groupInput.trim(), words }]);
+
+    console.log('Adding words to group:', { groupName: groupInput.trim(), selectedWords: selected });
+
+    const { data, error } = await supabase
+      .from('learned_words')
+      .update({ group_name: groupInput.trim() })
+      .in('id', selected)
+      .select();
+    
+    if (error) {
+      console.error('Failed to group words:', error.message);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.error('Word grouping update failed. No data returned. This might be an RLS issue.', error);
+      return;
+    }
+    
+    console.log('Successfully updated database with group_name. Response:', data);
+    
+    setUserWords(currentWords => 
+      currentWords.map(word => 
+        selected.includes(word.id) 
+          ? { ...word, group_name: groupInput.trim() }
+          : word
+      )
+    );
+    
     setSelected([]);
     setgroupInput("");
     setShowgroupModal(false);
+  };
+
+  const refreshWords = async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from('learned_words')
+      .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, timeTracked, is_new, group_name')
+      .eq('user_id', user.id);
+    
+    if (data) setUserWords(data);
+    setLoading(false);
   };
 
   return (
@@ -789,23 +847,34 @@ export default function Words() {
       <div className={`flex-1 ${getTourClasses("words-section")}`} id="words-section">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium">Your Word group</h2>
-          {(extensionId && connected && extensionAvailable) && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center text-sm text-green-500">
-                <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                Extension Connected
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleDisconnect}
-                className="h-8"
-              >
-                <LinkIcon className="h-3 w-3 mr-1" />
-                Disconnect
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={refreshWords}
+              className="h-8"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Refresh
+            </Button>
+            {(extensionId && connected && extensionAvailable) && (
+              <>
+                <div className="flex items-center text-sm text-green-500">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                  Extension Connected
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDisconnect}
+                  className="h-8"
+                >
+                  <LinkIcon className="h-3 w-3 mr-1" />
+                  Disconnect
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -884,6 +953,10 @@ export default function Words() {
                                 <MessageSquare className="h-4 w-4" />
                                 Add note
                               </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2">
+                                <Share2 className="h-4 w-4" />
+                                Share
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator/>
                               <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("group", word.id)}>
                                 <Trash2 className="h-4 w-4" />
@@ -932,7 +1005,7 @@ export default function Words() {
                     <div className="relative aspect-video">
                       {word.platform.toLowerCase() === 'netflix' ? (
                         <Image
-                          src={thumb || "./default.svg"}
+                          src={thumb || "https://placehold.co/500x500?text=Thumbnail"}
                           alt={word.show_name}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"

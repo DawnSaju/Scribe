@@ -25,7 +25,7 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const namelength = 32;
   const isError = value.length > namelength;
-  
+
   useEffect(() => {
     setValue(user?.user_metadata?.name || "");
   }, [user]);
@@ -42,12 +42,12 @@ export default function Settings() {
     
     try {
       const response = await fetch('/api/userControl/deleteUser', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
           body: JSON.stringify({ id: user.id }),
-      });
+    });
 
       if (response.ok) {
           await supabase.auth.signOut();

@@ -81,24 +81,14 @@ export default function Chat() {
       
       const json = await data.json();
 
-      let markdown_json;
-
-      try {
-        markdown_json = JSON.parse(json.data);
-      } catch (error) {
-        console.log(error)
-      }
-      
+      const markdown_json = json.data;
       const aiResponse: { role: 'assistant', content: string } = { role: 'assistant', content: markdown_json.message || '' };
-
       if (markdown_json) {
         handleUserXP(markdown_json.XP ?? 0);
       } else {
-        console.error("Error not a json format")
+        console.error("Error: response is not a JSON object");
       }
-      
       setMessages((prev) => [...prev, aiResponse]);
-
       setIsLoading(false);
     }
   };

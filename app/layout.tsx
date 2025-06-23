@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/components/Cache";
 import SupabaseProvider from "@/db/SupabaseProvider";
+import CookieContainer from "@/components/CookieContainer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +39,7 @@ export default function RootLayout({
         <QueryProvider>
           <SupabaseProvider>{children}</SupabaseProvider>
         </QueryProvider>
+        <CookieContainer/>
       </body>
     </html>
   );
