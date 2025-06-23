@@ -6,7 +6,7 @@ export async function POST(request: Request){
         const text = body.text;
 
         const endpoint = process.env.VOICE_ENDPOINT;
-        const key = process.env.KEY;
+        const key = process.env.VOICE_KEY;
 
         if (!endpoint) {
             return NextResponse.json({ error: "Error endpoint not set", status: 500});
