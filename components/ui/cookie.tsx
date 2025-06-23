@@ -40,7 +40,7 @@ export default function CookieConsent() {
         </p>
         <div className="flex flex-col gap-2 mt-2">
           <p className="text-xs text-gray-600">
-            By clicking "Accept", you agree to our use of cookies.
+            By clicking &quot;Accept&quot;, you agree to our use of cookies.
           </p>
           <a className="text-xs underline text-blue-600 hover:text-blue-800" href="/policy">Learn more</a>
         </div>
