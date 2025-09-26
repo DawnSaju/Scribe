@@ -19,28 +19,79 @@ export default function SupabaseProvider({ children }: { children: React.ReactNo
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         )
     );
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(() => {
+        // Try to get cached user data first for faster initial load
+        if (typeof window !== 'undefined') {
+            try {
+                const cachedUser = localStorage.getItem('user');
+                return cachedUser ? JSON.parse(cachedUser) : null;
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        } = supabase.auth.onAuthStateChange((event, session) => {
+            if (!isMounted) return;
+
+            const newUser = session?.user ?? null;
+            
             setUser(currentUser => {
-                const newUser = session?.user ?? null;
+                // Avoid unnecessary re-renders if user hasn't changed
                 if (currentUser?.id === newUser?.id) {
                     return currentUser;
                 }
+                
+                // Update localStorage cache
+                if (newUser) {
+                    localStorage.setItem('user', JSON.stringify(newUser));
+                } else {
+                    localStorage.removeItem('user');
+                }
+                
                 return newUser;
             });
+
+            // Handle auth events for better UX
+            if (event === 'SIGNED_OUT') {
+                localStorage.removeItem('user');
+            }
         });
 
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUser(user);
-            setIsLoading(false);
-        });
+        // Get initial session with faster resolution
+        const getInitialSession = async () => {
+            try {
+                const { data: { user: initialUser }, error } = await supabase.auth.getUser();
+                
+                if (isMounted) {
+                    if (!error && initialUser) {
+                        setUser(initialUser);
+                        localStorage.setItem('user', JSON.stringify(initialUser));
+                    } else if (!initialUser) {
+                        setUser(null);
+                        localStorage.removeItem('user');
+                    }
+                    setIsLoading(false);
+                }
+            } catch (error) {
+                console.error('Error getting initial user:', error);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        getInitialSession();
 
         return () => {
+            isMounted = false;
             subscription.unsubscribe();
         };
     }, [supabase]);

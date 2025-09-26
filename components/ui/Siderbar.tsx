@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/utils/supabase/client";
@@ -13,6 +13,7 @@ import { useSupabase } from "@/db/SupabaseProvider";
 
 export default function Sidebar() {
   const { user } = useSupabase();
+  const [hasMounted, setHasMounted] = useState(false);
 
   type SearchUser = {
     id: string;
@@ -26,6 +27,11 @@ export default function Sidebar() {
   const [modalOpen, setModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+
+  // Prevent hydration errors by only rendering after mount
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -88,15 +94,17 @@ export default function Sidebar() {
           <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-gray-700 bg-white rounded-full">
             <Image
               className="rounded-full object-cover"
-              src={user?.user_metadata?.avatar_url || './default.svg'}
-              alt={user?.email || 'User avatar'}
+              src={hasMounted && user?.user_metadata?.avatar_url ? user.user_metadata.avatar_url : './default.svg'}
+              alt={hasMounted && user?.email ? user.email : 'User avatar'}
               width={70}
               height={70}
             />
           </div>
         </div>
         <div className="text-center">
-          <h1 className="capitalize text-lg font-semibold">{user?.user_metadata?.full_name}</h1>
+          <h1 className="capitalize text-lg font-semibold">
+            {hasMounted && user?.user_metadata?.full_name ? user.user_metadata.full_name : ''}
+          </h1>
         </div>
       </div>
       <div className="flex justify-center gap-6 my-4">

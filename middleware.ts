@@ -54,19 +54,44 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    const user = await supabase.auth.getUser()
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-    const routes = ['/dashboard', '/chat', '/settings', '/api'];
+    const protectedRoutes = ['/dashboard', '/chat', '/settings', '/onboarding', '/api'];
+    const publicRoutes = ['/auth', '/callback', '/', '/policy'];
     const routeName = request.nextUrl.pathname;
 
-    const isProtectedRoute = routes.some(path =>
+    const isProtectedRoute = protectedRoutes.some(path =>
         routeName.startsWith(path)
     );
 
-    if (isProtectedRoute && user.error) {
-        return NextResponse.redirect(new URL('/auth/signin', request.url));
+    const isPublicRoute = publicRoutes.some(path =>
+        routeName === path || routeName.startsWith(path)
+    );
+
+    if (isProtectedRoute && (error || !user)) {
+        const redirectUrl = new URL('/auth', request.url);
+        redirectUrl.searchParams.set('redirectTo', routeName);
+        return NextResponse.redirect(redirectUrl);
+    }
+
+    if (user && !error) {
+        const hasOnboarded = user.user_metadata?.has_onboarded;
+        
+        if (hasOnboarded !== true && routeName !== '/onboarding' && !routeName.startsWith('/auth') && !isPublicRoute) {
+            return NextResponse.redirect(new URL('/onboarding', request.url));
+        }
+        
+        if (hasOnboarded === true && routeName === '/onboarding') {
+            return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
     }
     
     return response
+}
+
+export const config = {
+    matcher: [
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    ],
 }
 

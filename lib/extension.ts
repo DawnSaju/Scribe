@@ -39,12 +39,12 @@ export class ExtensionConnector {
   private static permanentDisconnect = false;
 
   static setExtensionId(id: string) {
-    this._extensionId = id;
+    ExtensionConnector._extensionId = id;
   }
 
   static async isExtensionInstalled(): Promise<boolean> {
     const chrome = this.chrome;
-    if (!chrome?.runtime?.sendMessage || !this._extensionId || this._extensionId.trim() === '') {
+    if (!chrome?.runtime?.sendMessage || !ExtensionConnector._extensionId || ExtensionConnector._extensionId.trim() === '') {
       console.log('Extension not installed, Chrome APIs not available, or extension ID not set');
       return false;
     }
@@ -52,7 +52,7 @@ export class ExtensionConnector {
     try {
       const response: MessageResponse = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
-          this._extensionId,
+          ExtensionConnector._extensionId,
           { type: 'PING' },
           (resp) => {
             if (chrome.runtime.lastError) {
@@ -64,7 +64,7 @@ export class ExtensionConnector {
           }
         );
 
-        setTimeout(() => resolve(null), this.TIMEOUT);
+        setTimeout(() => resolve(null), ExtensionConnector.TIMEOUT);
       });
 
       if (response && 'permanentDisconnect' in response) {
@@ -86,7 +86,7 @@ export class ExtensionConnector {
       const response: MessageResponse = await new Promise((resolve) => {
         try {
           chrome.runtime.sendMessage(
-            this._extensionId,
+            ExtensionConnector._extensionId,
             { type: 'CONNECT_REQUEST', force },
             resolve
           );
@@ -120,7 +120,7 @@ export class ExtensionConnector {
 
         if (
           !event.data.extensionId ||
-          event.data.extensionId !== this._extensionId
+          event.data.extensionId !== ExtensionConnector._extensionId
         ) return;
 
         const word = event.data.word as Word;
@@ -134,15 +134,35 @@ export class ExtensionConnector {
 
   static async disconnect(permanent = false): Promise<boolean> {
     const chrome = this.chrome;
-    if (!chrome?.runtime?.sendMessage) return false;
+    
+    // Check if Chrome APIs are available and extension ID is set
+    if (!chrome?.runtime?.sendMessage) {
+      console.warn('Chrome runtime not available for disconnect');
+      return false;
+    }
+    
+    if (!ExtensionConnector._extensionId || ExtensionConnector._extensionId.trim() === '') {
+      console.warn('Extension ID not set, cannot disconnect');
+      return false;
+    }
 
     try {
       const response: MessageResponse = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
-          this._extensionId,
+          ExtensionConnector._extensionId,
           { type: 'DISCONNECT_REQUEST', permanent },
-          resolve
+          (resp) => {
+            if (chrome.runtime.lastError) {
+              console.warn('Disconnect failed:', chrome.runtime.lastError.message);
+              resolve(null);
+            } else {
+              resolve(resp);
+            }
+          }
         );
+        
+        // Add timeout to prevent hanging
+        setTimeout(() => resolve(null), ExtensionConnector.TIMEOUT);
       });
 
       return !!response && 'success' in response && response.success === true;
@@ -160,7 +180,7 @@ export class ExtensionConnector {
     }
 
     const handler = (message: ExtensionMessage, sender: chrome.runtime.MessageSender) => {
-      if (sender.id === this._extensionId) {
+      if (sender.id === ExtensionConnector._extensionId) {
         callback(message);
       }
     };
@@ -176,7 +196,7 @@ export class ExtensionConnector {
     try {
       const response: { success?: boolean } = await new Promise((resolve) => {
         chrome.runtime.sendMessage(
-          this._extensionId,
+          ExtensionConnector._extensionId,
           { type: 'SEND_DATA', data },
           resolve
         );
@@ -187,5 +207,13 @@ export class ExtensionConnector {
       console.error('Failed to send data:', error);
       return false;
     }
+  }
+
+  static isConfigured(): boolean {
+    return ExtensionConnector._extensionId !== '' && ExtensionConnector._extensionId.trim() !== '';
+  }
+
+  static getExtensionId(): string {
+    return ExtensionConnector._extensionId;
   }
 }

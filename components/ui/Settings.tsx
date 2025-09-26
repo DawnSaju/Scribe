@@ -23,12 +23,26 @@ export default function Settings() {
   const [value, setValue] = useState('');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const namelength = 32;
   const isError = value.length > namelength;
 
   useEffect(() => {
     setValue(user?.user_metadata?.name || "");
   }, [user]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const getAvatarUrl = () => {
+    if (!isMounted) {
+      return `https://ui-avatars.com/api/?name=User&background=random&color=fff&size=70`;
+    }
+    return user?.user_metadata?.avatar_url ?? 
+           `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.email ?? "User")}&background=random&color=fff&size=70`;
+  };
 
   const deleteModal = () => {
     setDeleteModalOpen(true);
@@ -39,6 +53,7 @@ export default function Settings() {
         return;
     }
     setIsDeleting(true);
+    setDeleteError(null);
     
     try {
       const response = await fetch('/api/userControl/deleteUser', {
@@ -49,17 +64,31 @@ export default function Settings() {
           body: JSON.stringify({ id: user.id }),
     });
 
+      const result = await response.json();
+
       if (response.ok) {
+          console.log("Account deleted successfully");
           await supabase.auth.signOut();
           router.push("/auth");
+          return;
+      } else if (response.status === 206) {
+          console.log("Account data cleared with partial success");
+          const message = result.error || 'Your account data has been removed successfully.';
+          setDeleteError(message);
+          setDeleteModalOpen(false);
       } else {
-          console.error("Failed to delete account");
+          const errorMessage = result.error || 'Unknown error occurred';
+          console.error("Failed to delete account:", errorMessage);
+          setDeleteError(errorMessage);
       }
     } catch (error) {
         console.error("An unexpected error occurred:", error);
+        setDeleteError("An unexpected error occurred while deleting your account. Please try again.");
     } finally {
         setIsDeleting(false);
-        setDeleteModalOpen(false);
+        if (!deleteError) {
+          setDeleteModalOpen(false);
+        }
     }
   };
 
@@ -78,7 +107,7 @@ export default function Settings() {
                     <p className="font-['DM Sans'] text-sm text-black/50">Avatar is your profile picture - everyone who visits your profile will see this.</p>
                 </div>
                 <div className="flex flex-row items-center gap-4">
-                    <img className="w-10 h-10 rounded-full object-cover" src={ user?.user_metadata?.avatar_url ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.email ?? "")}&background=random&color=fff&size=70`} alt="User profile"/>
+                    <img className="w-10 h-10 rounded-full object-cover" src={getAvatarUrl()} alt="User profile"/>
                     <div className="relative">
                         <Button type="button" variant="ghost" className="text-black border border-black/10 hover:bg-transparent flex items-center gap-2" asChild>
                             <label htmlFor="profile-upload" className="cursor-pointer">
@@ -133,7 +162,12 @@ export default function Settings() {
                 </div>
             </div>
         </div>
-      <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+      <AlertDialog open={deleteModalOpen} onOpenChange={(open) => {
+        if (!open) {
+          setDeleteError(null);
+        }
+        setDeleteModalOpen(open);
+      }}>
           <AlertDialogContent>
               <AlertDialogHeader>
                   <AlertDialogTitle>Are you really sure?</AlertDialogTitle>
@@ -142,6 +176,14 @@ export default function Settings() {
                       account and remove all your existing data on Scribe.
                   </AlertDialogDescription>
               </AlertDialogHeader>
+              
+              {deleteError && (
+                <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <p className="text-sm text-red-600">{deleteError}</p>
+                </div>
+              )}
+              
               <AlertDialogFooter>
                   <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDeleteACc} className="bg-red-600 text-white hover:bg-red-500" disabled={isDeleting}>

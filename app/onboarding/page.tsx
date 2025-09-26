@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabase/client"; 
 import { useSupabase } from "@/db/SupabaseProvider";
@@ -16,8 +16,9 @@ export default function Onboarding() {
     const [proficiencyLevel, setProficiencyLevel] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
     const router = useRouter();
-    const { user } = useSupabase();
+    const { user, isLoading } = useSupabase();
     
     const goals = [
         { name: "Improve vocabulary", description: "Expand your word knowledge naturally", icon: "📚" },
@@ -337,6 +338,41 @@ export default function Onboarding() {
                 );
         }
     };
+
+    // Handle user authentication and redirect logic
+    useEffect(() => {
+        const checkUserStatus = async () => {
+            if (isLoading) return; // Still loading user data
+
+            if (!user) {
+                // No user, redirect to auth
+                router.replace('/auth');
+                return;
+            }
+
+            // Check if user has already completed onboarding
+            if (user.user_metadata?.has_onboarded === true) {
+                router.replace('/dashboard');
+                return;
+            }
+
+            setIsInitializing(false);
+        };
+
+        checkUserStatus();
+    }, [user, isLoading, router]);
+
+    // Show loading state while initializing
+    if (isInitializing || isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <h2 className="text-lg font-semibold text-gray-800">Preparing your onboarding...</h2>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-background">
