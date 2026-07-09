@@ -102,7 +102,7 @@ export default function Words() {
   const [copied, setCopied] = useState(false);
   const [currentStep, setcurrentStep] = useState(1);
   const [extensionId, setExtensionId] = useState('');
-  const [streak, setStreak] = useState(0);
+  const streak = user?.streakCount || 0;
   const [groups, setgroups] = useState<{ name: string; words: Word[] }[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [showgroupModal, setShowgroupModal] = useState(false);
