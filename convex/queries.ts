@@ -155,3 +155,47 @@ export const saveOnboarding = mutation({
     }
   }
 });
+
+export const getFriends = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) return [];
+
+    // Fetch friend requests where the user is sender or receiver
+    const sent = await ctx.db
+      .query("friend_requests")
+      .withIndex("by_sender", (q) => q.eq("sender_id", userId))
+      .filter((q) => q.eq(q.field("status"), "accepted"))
+      .collect();
+
+    const received = await ctx.db
+      .query("friend_requests")
+      .withIndex("by_receiver", (q) => q.eq("receiver_id", userId))
+      .filter((q) => q.eq(q.field("status"), "accepted"))
+      .collect();
+
+    // Extract friend IDs
+    const friendIds = new Set<string>();
+    sent.forEach((req) => friendIds.add(req.receiver_id));
+    received.forEach((req) => friendIds.add(req.sender_id));
+
+    // Fetch user details for each friend
+    const friends = [];
+    for (const friendId of friendIds) {
+      // @ts-ignore
+      const friend = await ctx.db.get(friendId);
+      if (friend) {
+        friends.push({
+          id: friend._id,
+          name: friend.name,
+          email: friend.email,
+          image: friend.image,
+        });
+      }
+    }
+
+    return friends;
+  },
+});
+

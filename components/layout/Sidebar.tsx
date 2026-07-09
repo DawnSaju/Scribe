@@ -13,6 +13,7 @@ import { DialogDescription } from "@radix-ui/react-dialog";
 
 export default function Sidebar() {
   const user = useQuery(api.users.current);
+  const friends = useQuery(api.queries.getFriends);
   const sendFriendRequest = useMutation(api.queries.sendFriendRequest);
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -107,7 +108,28 @@ export default function Sidebar() {
           </button>
         </div>
         <div className="space-y-3">
-          <div className="text-xs text-gray-400 text-center">No Friends yet.</div>
+          {friends === undefined ? (
+            <div className="text-xs text-gray-400 text-center">Loading friends...</div>
+          ) : friends.length === 0 ? (
+            <div className="text-xs text-gray-400 text-center">No Friends yet.</div>
+          ) : (
+            friends.map((friend) => (
+              <div key={friend.id} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden relative flex-shrink-0">
+                  {friend.image ? (
+                    <Image src={friend.image} alt={friend.name || "Friend"} fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs font-medium text-gray-500">
+                      {friend.name ? friend.name.charAt(0).toUpperCase() : "?"}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{friend.name || friend.email || "Unknown"}</div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
         <Button variant="outline" className="w-full mt-6 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl">See All</Button>
 
