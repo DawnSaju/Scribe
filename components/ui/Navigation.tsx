@@ -3,65 +3,34 @@
 import React, { useState, useEffect } from "react";
 import { Home, Settings, LogOut, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { useSupabase } from "@/db/SupabaseProvider";
+import { Button } from "@/components/ui/button";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 export default function Navigation() {
-  const [streak, setStreak] = useState(0);
   const router = useRouter();
-  const { user } = useSupabase();
+  const user = useQuery(api.users.current);
+  const updateStreak = useMutation(api.users.updateStreak);
+  const { signOut } = useAuthActions();
 
   const handleLogOut = async () => {
-      const { error } = await supabase.auth.signOut()
-      if (!error) {
+      try {
+          await signOut();
           router.push("/auth")
-      } else {
+      } catch (error: any) {
           console.error("Logout error:", error.message)
       }
   }
 
   useEffect(() => {
-    const streak = async () => {
-      if (!user) {
-        return;
-      }
-      
-      const today = new Date();
-      const prevSignin = user.user_metadata?.last_sign_in_at ? new Date(user.user_metadata.last_sign_in_at) : null;
-      let newStreak = user.user_metadata?.streakCount || 0;
-      let update = false;
-
-      if (!prevSignin) {
-        newStreak = 1;
-        update = false;
-      } else {
-        const days = Math.floor((today.setHours(0,0,0,0) - prevSignin.setHours(0,0,0,0)) / (1000 * (60**2) * 24));
-        if (days === 0) {
-
-        } else if (days === 1) {
-          newStreak += 1;
-          update = true;
-        } else if (days > 1) {
-          newStreak = 1;
-          update = true
-        }
-      }
-
-      setStreak(newStreak);
-      if (update) {
-        await supabase.auth.updateUser({
-          data: {
-            ...user.user_metadata,
-            last_sign_in_at: today.toISOString(),
-            streakCount: newStreak,
-          }
-        });
-      }
+    if (user?._id) {
+      updateStreak();
     }
-    streak();
-  }, [user]);
+  }, [user?._id, updateStreak]);
+
+  const streak = user?.streakCount || 0;
 
   return (
     <div className="flex h-full flex-col justify-between p-4">

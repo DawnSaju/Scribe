@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabase/client"; 
-import { useSupabase } from "@/db/SupabaseProvider";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,7 +18,10 @@ export default function Onboarding() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
     const router = useRouter();
-    const { user, isLoading } = useSupabase();
+    const user = useQuery(api.users.current);
+    const isLoading = user === undefined;
+    const updateUserMetadata = useMutation(api.users.updateUserMetadata);
+    const saveOnboarding = useMutation(api.queries.saveOnboarding);
     
     const goals = [
         { name: "Improve vocabulary", description: "Expand your word knowledge naturally", icon: "📚" },
@@ -97,28 +100,18 @@ export default function Onboarding() {
         setError(null)
 
         try {
-            const [metadataResult, onboardingResult] = await Promise.all([
-                supabase.auth.updateUser({
-                    data: { has_onboarded: true},
+            await Promise.all([
+                updateUserMetadata({
+                    has_onboarded: true
                 }),
-                supabase.from('onboarding').upsert({
-                    id: user.id,
+                saveOnboarding({
+                    id: user._id,
                     selected_platform: selectedPlatform,
                     learning_goal: learningGoal,
                     daily_time: dailyTime,
                     proficiency_level: proficiencyLevel
                 })
-            ])
-
-            if (metadataResult.error) {
-                console.error("Failed to update user metadat:", metadataResult.error.message)
-            }
-
-            if (onboardingResult.error) {
-                console.error("Failed to insert onboarding data:", onboardingResult.error.message);
-                setError("Failed to save onboarding data. Please try again.");
-                return;
-            }
+            ]);
 
             router.push('/dashboard');
         } catch (error) {
@@ -351,7 +344,7 @@ export default function Onboarding() {
             }
 
             // Check if user has already completed onboarding
-            if (user.user_metadata?.has_onboarded === true) {
+            if (user.has_onboarded === true) {
                 router.replace('/dashboard');
                 return;
             }

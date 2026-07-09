@@ -2,6 +2,11 @@
 
 # dependencies
 /node_modules
+/.agents
+/.agent
+/.claude
+/convex/_generated
+/openspec
 /.pnp
 .pnp.*
 .yarn/*
@@ -31,6 +36,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+
 # env files (can opt-in for committing if needed)
 .env*
 
@@ -40,3 +46,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+db_cluster-15-08-2025@00-28-08.backup.gz
+AGENTS.md
+CLAUDE.md
+skills-lock.json

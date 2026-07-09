@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React, { useState, useEffect, useRef } from 'react';
-import { useSupabase } from '@/db/SupabaseProvider';
+import { useConvexAuth } from "convex/react";
 
 const AnimatedNavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
   const defaultTextColor = 'text-gray-700';
@@ -23,8 +23,8 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [headerShapeClass, setHeaderShapeClass] = useState('rounded-full');
   const shapeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { user } = useSupabase();
-  const isSignedIn = !!user;
+  const { isAuthenticated } = useConvexAuth();
+  const isSignedIn = isAuthenticated;
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);

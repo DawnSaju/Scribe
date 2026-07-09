@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Volume2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
-import { createBrowserClient } from '@supabase/ssr';
-import { useSupabase } from "@/db/SupabaseProvider";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 interface Phonetic {
   text: string;
@@ -19,7 +19,7 @@ interface Phonetic {
 
 interface Word_Structure {
   word: string;
-  phonetic: string;
+  phonetic?: string;
   phonetics: Phonetic[];
   meanings: Array<{
     partOfSpeech: string;
@@ -43,11 +43,10 @@ export default function WordOfTheDay() {
   const [retryCount, setRetryCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const MAX_RETRIES = 5;
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  const { user, isLoading: userLoading } = useSupabase();
+  const user = useQuery(api.users.current);
+  const userLoading = user === undefined;
+  const wordOfTheDay = useQuery(api.queries.getWordOfTheDay, user ? { userId: user._id } : "skip");
+  const updateWordOfTheDay = useMutation(api.queries.updateWordOfTheDay);
 
   const isSameDay = useCallback((date1: Date, date2: Date) => {
     return (
@@ -74,7 +73,7 @@ export default function WordOfTheDay() {
     }
 
     try {
-      const wordResponse = await fetch("https://random-word-api.vercel.app/api?words=1");
+      const wordResponse = await fetch("https://random-word-api.herokuapp.com/word");
       const randomWord = await wordResponse.json();
       
       const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${randomWord}`);
@@ -127,20 +126,8 @@ export default function WordOfTheDay() {
         return;
       }
 
-      const { data: existingWord, error: fetchError } = await supabase
-        .from('word_of_the_day')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-        } else {
-          console.error('Error fetching word:', fetchError);
-          setError("Error fetching word. Please try again.");
-          return;
-        }
-      }
+      if (wordOfTheDay === undefined) return;
+      const existingWord = wordOfTheDay;
 
       const now = new Date();
       const shouldFetchNewWord = !existingWord || 
@@ -153,24 +140,18 @@ export default function WordOfTheDay() {
           return;
         }
 
-        const { error: upsertError } = await supabase
-          .from('word_of_the_day')
-          .upsert({
-            id: user.id,
+        try {
+          await updateWordOfTheDay({
+            id: user._id,
             word: newWordData.word,
             phonetic: newWordData.phonetic,
             phonetics: newWordData.phonetics,
             meanings: newWordData.meanings,
             updated_at: now.toISOString()
           });
-
-        if (upsertError) {
+        } catch (upsertError: any) {
           console.error('Error storing word:', upsertError);
-          if (upsertError.code === '42501') {
-            setError("Permission denied. Please try signing out and back in.");
-          } else {
-            setError("Error saving word. Please try again.");
-          }
+          setError("Error saving word. Please try again.");
           return;
         }
 
@@ -194,7 +175,7 @@ export default function WordOfTheDay() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, userLoading, supabase, isSameDay, fetchWordFromAPI]);
+  }, [user, userLoading, wordOfTheDay, isSameDay, fetchWordFromAPI]);
 
   useEffect(() => {
     if (!userLoading) {

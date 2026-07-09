@@ -4,16 +4,18 @@ import { Home, MessageSquare, Settings, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabase/client";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 export default function MobileNav() {
   const router = useRouter()
 
+  const { signOut } = useAuthActions();
+
   const handleLogOut = async () => {
-      const { error } = await supabase.auth.signOut()
-      if (!error) {
+      try {
+          await signOut();
           router.push("/auth")
-      } else {
+      } catch (error: any) {
           console.error("Logout error:", error.message)
       }
   }

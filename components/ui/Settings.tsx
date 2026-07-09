@@ -1,15 +1,15 @@
-import React from 'react';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQuery, useMutation } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { api } from "@/convex/_generated/api";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Check, Info, Crown, ShieldAlert } from 'lucide-react';
 import UpgradeDialog from '@/components/ui/UpgradeDialog';
-import { revalidatePath } from 'next/cache';
-
-export const dynamic = 'force-dynamic';
 
 const tierMeta: Record<string, { label: string; features: string[]; gradientFrom: string; gradientTo: string; icon: React.ReactNode; color: string; }> = {
   FREE: {
@@ -38,54 +38,77 @@ const tierMeta: Record<string, { label: string; features: string[]; gradientFrom
   }
 };
 
-async function getData() {
-    const cookieStore = cookies();
-    const supabase = await createClient(cookieStore);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect('/auth');
-  
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('tier, full_name, beta')
-      .eq('id', user.id)
-      .single();
-  
-    const { count: wordCount } = await supabase
-      .from('learned_words')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-  
-    return {
-      user: user,
-      userData: user,
-      tier: profile?.tier.toUpperCase() || 'FREE',
-      isBeta: profile?.beta || false,
-      displayName: profile?.full_name || user.user_metadata?.name || '',
-      email: user.email ?? null,
-      lastSignIn: user.last_sign_in_at ?? null,
-      wordCount: wordCount || 0,
-    };
+export default function Settings() {
+  const router = useRouter();
+  const { signOut } = useAuthActions();
+  const user = useQuery(api.users.current);
+  const wordCount = useQuery(api.queries.getLearnedWordsCount, user ? { userId: user._id } : "skip");
+  const updateUserMetadata = useMutation(api.users.updateUserMetadata);
+  const deleteUser = useMutation(api.users.deleteUser);
+
+  const [displayName, setDisplayName] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.name || '');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user === null) {
+      router.push('/auth');
+    }
+  }, [user, router]);
+
+  if (user === undefined || user === null || wordCount === undefined) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary text-primary"></div>
+      </div>
+    );
   }
-  
 
-async function updateName(formData: FormData) {
-  'use server';
-  const newName = (formData.get('displayName') as string)?.trim();
-  if (!newName || newName.length > 32) return;
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.auth.updateUser({ data: { ...user.user_metadata, name: newName } });
-  revalidatePath('/settings');
-}
+  const tier = user.tier?.toUpperCase() || 'FREE';
+  const isBeta = user.beta || false;
+  const email = user.email ?? null;
+  const lastSignIn = user.last_sign_in_at ?? null;
 
-export default async function Settings() {
-  const data = await getData();
-  const { tier, displayName, email, lastSignIn, wordCount, userData, user, isBeta } = data;
   const meta = tierMeta[tier] || tierMeta.FREE;
   const wordLimit = 7;
   const usagePercent = tier === 'FREE' ? Math.min(100, (wordCount / wordLimit) * 100) : 100;
+
+  const handleUpdateName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = displayName.trim();
+    if (!name || name.length > 32) return;
+    setIsSavingName(true);
+    try {
+      await updateUserMetadata({ name });
+      console.log("Name updated successfully");
+    } catch (err) {
+      console.error("Failed to update name:", err);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!window.confirm("Are you sure you want to permanently delete your account? This action is irreversible.")) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await deleteUser({ id: user._id });
+      await signOut();
+      router.push('/auth');
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className='min-h-screen pb-16'>
@@ -126,7 +149,6 @@ export default async function Settings() {
             </div>
             <div className='w-full md:w-auto flex flex-col gap-3 md:items-end'>
               <UpgradeDialog
-                userData={userData}
                 currentTier={tier as any}
                 isBeta={isBeta}
                 triggerLabel={
@@ -144,19 +166,21 @@ export default async function Settings() {
             <h2 className='text-lg md:text-xl font-semibold tracking-tight'>Profile</h2>
             <p className='text-sm text-muted-foreground mt-1'>Public information.</p>
           </div>
-            <form action={updateName} className='flex flex-col sm:flex-row gap-6'>
+            <form onSubmit={handleUpdateName} className='flex flex-col sm:flex-row gap-6'>
               <div className='flex items-start gap-4'>
                 <div className='w-16 h-16 rounded-full bg-muted flex items-center justify-center text-sm font-medium'>
-                  {displayName?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase()}
+                  {displayName?.charAt(0)?.toUpperCase() || email?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div className='space-y-3'>
                   <div>
                     <p className='text-xs uppercase tracking-wide text-muted-foreground font-medium mb-1'>Display Name</p>
-                    <Input name='displayName' defaultValue={displayName} maxLength={32} className='max-w-xs' required />
+                    <Input name='displayName' value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={32} className='max-w-xs' required />
                     <p className='mt-1 text-[11px] text-muted-foreground'>Max length 32 characters.</p>
                   </div>
                   <div className='flex items-center gap-3'>
-                    <Button size='sm' className='px-5'>Save Name</Button>
+                    <Button size='sm' className='px-5' disabled={isSavingName}>
+                      {isSavingName ? "Saving..." : "Save Name"}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -183,7 +207,7 @@ export default async function Settings() {
             </div>
             <div className='space-y-1'>
               <p className='text-xs uppercase tracking-wide text-muted-foreground font-medium'>User ID</p>
-              <p className='font-mono text-xs bg-muted/50 px-2 py-1 rounded-md w-fit'>{user.id.slice(0,12)}…</p>
+              <p className='font-mono text-xs bg-muted/50 px-2 py-1 rounded-md w-fit'>{user._id.slice(0,12)}…</p>
             </div>
           </div>
         </section>
@@ -199,9 +223,10 @@ export default async function Settings() {
                 <p className='font-medium text-destructive'>Delete Account</p>
                 <p className='text-xs text-muted-foreground max-w-md'>This permanently deletes your account & data.</p>
               </div>
-              <form action='/api/userControl/deleteUser' method='POST' className='md:w-auto w-full'>
-                <input type='hidden' name='id' value={user.id} />
-                <Button type='submit' variant='destructive' className='w-full'>Delete Account</Button>
+              <form onSubmit={handleDeleteAccount} className='md:w-auto w-full'>
+                <Button type='submit' variant='destructive' className='w-full' disabled={isDeleting}>
+                  {isDeleting ? "Deleting..." : "Delete Account"}
+                </Button>
               </form>
             </div>
           </div>
