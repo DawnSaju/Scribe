@@ -1,5 +1,6 @@
 "use client";
 
+import WordCard from "./WordCard";
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Pl
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ExtensionConnector } from "@/lib/extension";
 import { RiGithubFill, RiNetflixFill, RiYoutubeFill } from "@remixicon/react";
-import { UserProgress, type Stat } from "@/components/ui/UserProgress";
+import { UserProgress, type Stat } from "@/components/features/UserProgress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -832,92 +833,13 @@ export default function Words() {
                   const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
                   const thumb = netflixThumbnailUrl[thumbKey];
                   return (
-                    <div key={word._id} className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                      <div className="relative aspect-video">
-                        {word.platform.toLowerCase() === 'netflix' ? (
-                          <Image
-                            src={thumb || "./default.svg"}
-                            alt={word.show_name}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : word.platform.toLowerCase() === 'youtube' ? (
-                          <Image
-                            src={word.thumbnailimg}
-                            alt={word.show_name}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                            <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
-                          </div>
-                        )}
-                        {word.platform && (
-                          <div className="absolute right-3 top-3 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                            <PlatformIcon platform={word.platform} className="h-5 w-5" />
-                          </div>
-                        )}
-                        {word.platform.toLowerCase() === "netflix" ? (
-                          <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                            <Tv2 className="h-3.5 w-3.5 mr-1" />
-                            S{word.season} • E{word.episode}
-                          </Badge>
-                          ) : (
-                          <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                            <Clock className="h-3.5 w-3.5" />
-                            {word.timeTracked}s
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="p-5">
-                        <div className="flex justify-between items-start gap-3 mb-3">
-                          <div>
-                            <h3 className="text-xl font-semibold tracking-tight line-clamp-1">{word.word}{word.is_new && (<span className="ml-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />)}</h3>
-                            <p className="text-sm text-muted-foreground capitalize mt-1">{word.part_of_speech}</p>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl w-48">
-                              <DropdownMenuItem className="gap-2">
-                                <Bookmark className="h-4 w-4" />
-                                Save to group
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2">
-                                <MessageSquare className="h-4 w-4" />
-                                Add note
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2">
-                                <Share2 className="h-4 w-4" />
-                                Share
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator/>
-                              <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("group", word._id)}>
-                                <Trash2 className="h-4 w-4" />
-                                Remove
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <p className="text-sm line-clamp-2 mb-3">{word.definition}</p>
-                        {word.example && (
-                          <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">&quot;{word.example}&quot;</div>
-                        )}
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate max-w-[120px]">{word.show_name}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            <span className="text-xs">{new Date(Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <WordCard
+                      key={word._id}
+                      word={word}
+                      thumb={thumb}
+                      onRemove={handleRemoveWord}
+                      type="group"
+                    />
                   );
                 })
               ])}

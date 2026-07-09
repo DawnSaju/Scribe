@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Check, Info, Crown, ShieldAlert } from 'lucide-react';
-import UpgradeDialog from '@/components/ui/UpgradeDialog';
+import UpgradeDialog from "@/components/features/UpgradeDialog";
 
 const tierMeta: Record<string, { label: string; features: string[]; gradientFrom: string; gradientTo: string; icon: React.ReactNode; color: string; }> = {
   FREE: {

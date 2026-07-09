@@ -2,9 +2,9 @@
 import React from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import Navigation from "@/components/layout/Navigation";
-import Words from "@/components/ui/Words";
+import Words from "@/components/features/words/WordsList";
 import Sidebar from "@/components/layout/Sidebar";
-import WordOfTheDay from "@/components/ui/word_of_the_day";
+import WordOfTheDay from "@/components/features/WordOfTheDay";
 
 export const dynamic = 'force-dynamic';
 
