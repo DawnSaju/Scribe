@@ -1,4 +1,5 @@
 import { query, mutation } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { auth } from "./auth";
 
@@ -184,7 +185,7 @@ export const getFriends = query({
     const friends = [];
     for (const friendId of friendIds) {
       // @ts-ignore
-      const friend = await ctx.db.get(friendId);
+      const friend = await ctx.db.get(friendId as Id<"users">);
       if (friend) {
         friends.push({
           id: friend._id,
