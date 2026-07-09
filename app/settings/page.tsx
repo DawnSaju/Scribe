@@ -1,7 +1,7 @@
 import React from "react";
 import SettingsLayout from "@/components/SettingsLayout";
 import Navigation from "@/components/layout/Navigation";
-import Settings from "@/components/ui/Settings";
+import Settings from "@/components/features/Settings";
 
 export const dynamic = 'force-dynamic';
 
