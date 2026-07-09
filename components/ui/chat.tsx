@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/utils/supabase/client';
+
 import { Lightbulb, FileText, GraduationCap, MoreHorizontal, SquarePen, PlusCircle, ArrowUp, Volume2, User, Bot, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Markdown from 'react-markdown';
-import { useSupabase } from '@/db/SupabaseProvider';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 export default function Chat() {
-  const { user } = useSupabase();
+  const user = useQuery(api.users.current);
+  const wordOfTheDay = useQuery(api.queries.getWordOfTheDay, user ? { userId: user._id } : "skip");
+  const words = useQuery(api.queries.getLearnedWords, user ? { userId: user._id } : "skip");
+  const updateXP = useMutation(api.users.updateXP);
   
   const [messages, setMessages] = useState<{
     role: 'user' | 'assistant';
@@ -26,23 +30,17 @@ export default function Chat() {
   useEffect(() => {
     if (user) {
       setIsReady(true);
-      setXPpoints(user.user_metadata?.XP ?? 0);
+      setXPpoints(user.XP ?? 0);
     }
   }, [user])
 
   const handleUserXP = async (increment: number) => {
     setXPpoints(prevXP => {
-      const newXP = Math.floor((prevXP ?? 0) + increment);
+      const safeIncrement = Math.floor(increment);
+      const newXP = Math.floor((prevXP ?? 0) + safeIncrement);
       if (user) {
-        supabase.auth.updateUser({
-          data: {
-            ...user.user_metadata,
-            XP: newXP
-          }
-        }).then(({ error: updateError }) => {
-          if (updateError) {
-            console.error('Failed to update user metadata:', updateError.message);
-          }
+        updateXP({ amount: safeIncrement }).catch(updateError => {
+          console.error('Failed to update user metadata:', updateError.message);
         });
       }
       return newXP;
@@ -57,26 +55,14 @@ export default function Chat() {
       setInput('');
       setIsLoading(true);
       
-      const { data: WordOfTheDay, error: fetchError } = await supabase
-        .from('word_of_the_day')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
-
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-        } else {
-          console.error('Error fetching word:', fetchError);
-          return;
-        }
-      }
-      const { data: words } = await supabase
-        .from("learned_words") 
-        .select('id, word, part_of_speech, is_new, definition, example, platform, show_name, season, episode')
-        .eq("user_id", user?.id);
       const data = await fetch("/api/aiChat", {
         method: "POST",
-        body: JSON.stringify({messageHistory: allMessages, word_of_the_day: WordOfTheDay, user: user?.user_metadata?.name, userWordsData: words}),
+        body: JSON.stringify({
+          messageHistory: allMessages, 
+          word_of_the_day: wordOfTheDay, 
+          user: user?.name, 
+          userWordsData: words
+        }),
       });
       
       const json = await data.json();

@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/utils/supabase/client";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Play, XIcon, Monitor, Loader2, ArrowRight, ArrowLeft, HelpCircle, RefreshCw, SettingsIcon, PowerIcon, Bookmark, MessageSquare, Tv2, CalendarDays, Trash2, MoreHorizontal, Plus, TrendingUp, RotateCcw, Clock, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ExtensionConnector } from "@/lib/extension";
@@ -31,8 +32,6 @@ import {
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RealtimeChannel } from "@supabase/supabase-js";
-import { useSupabase } from "@/db/SupabaseProvider";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
@@ -51,11 +50,20 @@ function useMediaQuery(query: string): boolean {
 }
 
 export default function Words() {
-  const { user } = useSupabase();
+  const user = useQuery(api.users.current);
+  const words = useQuery(api.queries.getLearnedWords, user ? { userId: user._id } : "skip");
+  const updateXP = useMutation(api.users.updateXP);
+  const updateUserMetadata = useMutation(api.users.updateUserMetadata);
+  const updateStreak = useMutation(api.users.updateStreak);
+  const addLearnedWord = useMutation(api.queries.addLearnedWord);
+  const updateLearnedWord = useMutation(api.queries.updateLearnedWord);
+  const deleteLearnedWord = useMutation(api.queries.deleteLearnedWord);
+
   const [hasMounted, setHasMounted] = useState(false);
 
   type Word = {
-    id: string;
+    _id: string;
+    id?: string;
     word: string;
     part_of_speech: string;
     is_new?: boolean;
@@ -98,9 +106,9 @@ export default function Words() {
   const [selected, setSelected] = useState<string[]>([]);
   const [showgroupModal, setShowgroupModal] = useState(false);
   const [groupInput, setgroupInput] = useState("");
-  const noOfShows = new Set(userWords.map(word => word.show_name)).size;
+  const noOfShows = new Set(userWords.filter(word => word.show_name).map(word => word.show_name)).size;
 
-  const totalTimeTrackedInSeconds = userWords.reduce((total, word) => total + (word.timeTracked || 0), 0);
+  const totalTimeTrackedInSeconds = userWords.reduce((total, word) => total + (Number(word.timeTracked) || 0), 0);
   const totalMinutes = totalTimeTrackedInSeconds / 60;
 
   let timeValue: number;
@@ -213,7 +221,7 @@ export default function Words() {
     const checkInstallProgress = async () => {
       void currentStep;
       if (!user) return;
-      const installProgress = user?.user_metadata?.install_progress;
+      const installProgress = user?.install_progress;
       
       if (installProgress) {
         setcurrentStep(installProgress);
@@ -233,11 +241,8 @@ export default function Words() {
     setcurrentStep(nextStep);
     
     if (!user) return;
-    await supabase.auth.updateUser({
-      data: { 
-        ...user?.user_metadata,
-        install_progress: nextStep 
-      }
+    await updateUserMetadata({ 
+      install_progress: nextStep 
     });
   };
 
@@ -249,11 +254,8 @@ export default function Words() {
     setConnectionError(false);
     
     if (!user) return;
-    await supabase.auth.updateUser({
-      data: { 
-        ...user?.user_metadata,
-        install_progress: 1 
-      }
+    await updateUserMetadata({ 
+      install_progress: 1 
     });
   };
 
@@ -359,8 +361,10 @@ export default function Words() {
     const unsubscribe = ExtensionConnector.listenForWordMessages(async (word) => {
       console.log('Got word from extension:', word);
       if (!user) return;
-      const { error: insertError } = await supabase.from("learned_words").upsert({
-          user_id: user.id,
+      
+      try {
+        const payload = {
+          user_id: user._id,
           word: word.word,
           part_of_speech: word.part_of_speech,
           definition: word.definition,
@@ -368,14 +372,18 @@ export default function Words() {
           show_name: word.show_name,
           platform: word.platform,
           thumbnailimg: word.thumbnailimg,
-          timeTracked: word.timeTracked,
+          timeTracked: word.timeTracked != null ? String(word.timeTracked) : null,
           season: word.season,
           episode: word.episode,
-      })
+        };
 
-      if (insertError){
-        console.error("Failed to insert word data");
-        return;
+        const cleanPayload = Object.fromEntries(
+          Object.entries(payload).filter(([_, v]) => v !== null)
+        ) as any;
+
+        await addLearnedWord(cleanPayload);
+      } catch (error) {
+        console.error("Failed to insert word data", error);
       }
 
       getShowThumbnail(word.show_name, word.season, word.episode);
@@ -396,8 +404,9 @@ export default function Words() {
   useEffect(() => {
     const checkUser = async () => {
       if (!user) return;
-      const has_completed_tour = user?.user_metadata?.has_completed_tour;
-
+      
+      const has_completed_tour = user.has_completed_tour;
+      
       if (has_completed_tour == undefined) {
         setTimeout(() => setWalkthrough(true), 1500);
       }
@@ -407,87 +416,17 @@ export default function Words() {
   }, [user]);
 
   useEffect(() => {
-    const streak = async () => {
-      if (!user) {
-        return;
-      }
-
-      const today = new Date();
-      const prevSignin = user.user_metadata?.last_sign_in_at ? new Date(user.user_metadata.last_sign_in_at) : null;
-      let newStreak = user.user_metadata?.streakCount || 0;
-      let update = false;
-
-      if (!prevSignin) {
-        newStreak = 1;
-        update = true;
-      } else {
-        const days = Math.floor((today.setHours(0,0,0,0) - prevSignin.setHours(0,0,0,0)) / (1000 * (60**2) * 24));
-        if (days === 0) {
-
-        } else if (days === 1) {
-          newStreak += 1;
-          update = false;
-        } else if (days > 1) {
-          newStreak = 1;
-          update = true
-        }
-      }
-
-      setStreak(newStreak);
-      if (update) {
-        await supabase.auth.updateUser({
-          data: {
-            ...user.user_metadata,
-            last_sign_in_at: today.toISOString(),
-            streakCount: newStreak,
-          }
-        });
-      }
+    if (user?._id) {
+      updateStreak();
     }
-    streak();
-  }, [user]);
+  }, [user?._id, updateStreak]);
 
   useEffect(() => {
-    let channel: RealtimeChannel | null = null;
-    let isCancelled = true;
-    const getWords = async () => {
-      if (!user) return;
-      setLoading(true);
-      const { data } = await supabase
-        .from('learned_words')
-        .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, timeTracked, is_new, group_name')
-        .eq('user_id', user.id);
-      
-      if (isCancelled && data) setUserWords(data);
-      
-      channel = supabase
-        .channel('learned_words_realtime')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'learned_words', filter: `user_id=eq.${user.id}` },
-          payload => {
-            console.log('Realtime update received:', payload);
-            setUserWords(prev => {
-                if (payload.eventType === 'INSERT') {
-                    return [...prev, payload.new as Word];
-                } else if (payload.eventType === 'UPDATE') {
-                    return prev.map(w => w.id === payload.new.id ? payload.new as Word : w);
-                } else if (payload.eventType === 'DELETE') {
-                    return prev.filter(w => w.id !== (payload.old as Word).id);
-                }
-                return prev;
-            });
-          }
-        )
-        .subscribe();
-        setLoading(false);
-    };
-    getWords();
-    return () => {
-      isCancelled = false;
-      if (channel) supabase.removeChannel(channel);
-    };
-  }, [user]);
+    if (words) {
+      setUserWords(words as any); // Type assertion for now due to subtle type differences
+      setLoading(false);
+    }
+  }, [words]);
 
   useEffect(() => {
     const wordsByGroup = userWords.reduce((acc, word) => {
@@ -521,18 +460,11 @@ export default function Words() {
     if (!user) return;
     setWalkthrough(false);
     setHasCompletedWalkThrough(true);
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: { 
-        ...user.user_metadata,
-        has_completed_tour: true,
-      }
+    await updateUserMetadata({ 
+      has_completed_tour: true,
     });
 
     console.log(HasCompletedWalkThrough);
-
-    if (updateError) {
-      console.error('Error updating user metadata:', updateError.message);
-    }
   };
 
   const handleRemoveExtension = async () => {
@@ -647,25 +579,20 @@ export default function Words() {
     setSelected(prev => prev.filter(selectedId => selectedId !== id));
 
     if (type === "grid") {
-      setUserWords(prev => prev.filter(word => word.id !== id));
-      const { error } = await supabase
-      .from('learned_words')
-      .delete()
-      .eq('id', id);
-      if (error) {
+      setUserWords(prev => prev.filter(word => word._id !== id));
+      try {
+        await deleteLearnedWord({ id: id as any });
+      } catch (error: any) {
         console.error('Error removing the word:', error.message);
       }
     } else if (type === "group") {
       setgroups(prev => prev.map(col => ({
         ...col,
-        words: col.words.filter(word => word.id !== id)
+        words: col.words.filter(word => word._id !== id)
       })));
-      const { error } = await supabase
-      .from('learned_words')
-      .update({ group_name: null })
-      .eq('id', id)
-      .select();
-      if (error) {
+      try {
+        await updateLearnedWord({ id: id as any, group_name: undefined });
+      } catch (error: any) {
         console.error("Error removing the word from group:", error.message)
       }
     }
@@ -697,46 +624,30 @@ export default function Words() {
 
     console.log('Adding words to group:', { groupName: groupInput.trim(), selectedWords: selected });
 
-    const { data, error } = await supabase
-      .from('learned_words')
-      .update({ group_name: groupInput.trim() })
-      .in('id', selected)
-      .select();
-    
-    if (error) {
+    try {
+      await Promise.all(selected.map(id => updateLearnedWord({ id: id as any, group_name: groupInput.trim() })));
+      
+      setUserWords(currentWords => 
+        currentWords.map(word => 
+          selected.includes(word._id) 
+            ? { ...word, group_name: groupInput.trim() }
+            : word
+        )
+      );
+      
+      setSelected([]);
+      setgroupInput("");
+      setShowgroupModal(false);
+    } catch (error: any) {
       console.error('Failed to group words:', error.message);
-      return;
     }
-
-    if (!data || data.length === 0) {
-      console.error('Word grouping update failed. No data returned. This might be an RLS issue.', error);
-      return;
-    }
-    
-    console.log('Successfully updated database with group_name. Response:', data);
-    
-    setUserWords(currentWords => 
-      currentWords.map(word => 
-        selected.includes(word.id) 
-          ? { ...word, group_name: groupInput.trim() }
-          : word
-      )
-    );
-    
-    setSelected([]);
-    setgroupInput("");
-    setShowgroupModal(false);
   };
 
   const refreshWords = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('learned_words')
-      .select('id, word, part_of_speech, definition, example, show_name, season, episode, platform, thumbnailimg, timeTracked, is_new, group_name')
-      .eq('user_id', user.id);
-    
-    if (data) setUserWords(data);
+    // Convex queries are reactive, but if we need to manually trigger logic we can just use the already fetched words
+    if (words) setUserWords(words as any);
     setLoading(false);
   };
 
@@ -810,7 +721,7 @@ export default function Words() {
       >
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-            Welcome back{hasMounted && user?.user_metadata?.name ? `, ${user.user_metadata.name}` : ''}
+            Welcome back{hasMounted && user?.name ? `, ${user.name}` : ''}
           </h1>
           <p className="text-muted-foreground mt-1 sm:mt-0">
             Continue your learning journey
@@ -864,10 +775,10 @@ export default function Words() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Points</CardDescription>
-            <CardTitle className="text-2xl">{user?.user_metadata.XP || 0} XP</CardTitle>
+            <CardTitle className="text-2xl">{user?.XP || 0} XP</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">{user?.user_metadata.XP ? "Good Progress!": "Start learning!"}</p>
+            <p className="text-xs text-muted-foreground">{user?.XP ? "Good Progress!": "Start learning!"}</p>
           </CardContent>
         </Card>
       </div>
@@ -921,7 +832,7 @@ export default function Words() {
                   const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
                   const thumb = netflixThumbnailUrl[thumbKey];
                   return (
-                    <div key={word.id} className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <div key={word._id} className="relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                       <div className="relative aspect-video">
                         {word.platform.toLowerCase() === 'netflix' ? (
                           <Image
@@ -985,7 +896,7 @@ export default function Words() {
                                 Share
                               </DropdownMenuItem>
                               <DropdownMenuSeparator/>
-                              <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("group", word.id)}>
+                              <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("group", word._id)}>
                                 <Trash2 className="h-4 w-4" />
                                 Remove
                               </DropdownMenuItem>
@@ -1015,19 +926,19 @@ export default function Words() {
                   <hr className="border-t border-border" />
                 </div>
               )}
-              {userWords.filter(word => !groups.some(col => col.words.some(w => w.id === word.id))).map((word) => {
+              {userWords.filter(word => !groups.some(col => col.words.some(w => w._id === word._id))).map((word) => {
                 const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
                 const thumb = netflixThumbnailUrl[thumbKey];
-                const isSelected = selected.includes(word.id);
+                const isSelected = selected.includes(word._id);
                 return (
                   <div
                     role="checkbox"
                     aria-checked={isSelected}
                     tabIndex={0}
-                    onClick={() => selectWord(word.id)}
-                    onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') selectWord(word.id); }}
+                    onClick={() => selectWord(word._id)}
+                    onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') selectWord(word._id); }}
                     className={`relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer select-none ${isSelected ? 'border-2 border-primary ring-2 ring-primary' : ''}`}
-                    key={word.id}
+                    key={word._id}
                   >
                     <div className="relative aspect-video">
                       {word.platform.toLowerCase() === 'netflix' ? (
@@ -1092,7 +1003,7 @@ export default function Words() {
                               Share
                             </DropdownMenuItem>
                             <DropdownMenuSeparator/>
-                            <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("grid", word.id)}>
+                            <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("grid", word._id)}>
                               <Trash2 className="h-4 w-4" />
                               Remove
                             </DropdownMenuItem>
@@ -1572,13 +1483,9 @@ export default function Words() {
                         if (typeof window !== 'undefined') {
                           localStorage.setItem('extensionId', extensionId.trim());
                         }
-                        const { data: { user } } = await supabase.auth.getUser();
                         if (user) {
-                          await supabase.auth.updateUser({
-                            data: {
-                              ...user.user_metadata,
-                              extensionId: extensionId.trim(),
-                            }
+                          await updateUserMetadata({
+                            extensionId: extensionId.trim(),
                           });
                         }
                         step3();

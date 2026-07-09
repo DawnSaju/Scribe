@@ -39,5 +39,5 @@ Start the server
 
 ## Feedback
 
-If you have any feedback, please reach out to us at dawnsaju@trigenlabs.tech
+If you have any feedback, please reach out to us at dawn@dawnsaju.dev
 

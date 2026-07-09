@@ -1,26 +1,21 @@
 import { NextResponse } from 'next/server';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 
 export async function POST() {
-  const supabase = createServerComponentClient({ cookies });
+  try {
+    const token = await convexAuthNextjsToken();
+    const user = await fetchQuery(api.users.current, {}, { token });
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'No user found' }, { status: 401 });
+    }
 
-  if (userError || !user) {
-    return NextResponse.json({ error: userError?.message || 'No user found' }, { status: 401 });
+    await fetchMutation(api.users.updateUserMetadata, { isConnected: true }, { token });
+
+    return NextResponse.json({ userId: user._id });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  const { error: updateError } = await supabase.auth.updateUser({
-    data: { isConnected: true },
-  });
-
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ userId: user.id });
 }

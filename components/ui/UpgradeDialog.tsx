@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,19 +58,11 @@ const basePlans: PlanOption[] = [
 
 type Tier = "FREE" | "PREMIUM" | "ENTREPRISE";
 
-interface User { 
-  id: string;
-  email?: string;
-  full_name?: string;
-  avatar_url?: string;
-}
-
 interface UpgradeDialogProps {
   triggerLabel?: string;
   disabled?: boolean;
   currentTier?: Tier;
   isBeta?: boolean;
-  userData: User;
 }
 
 export default function UpgradeDialog({
@@ -76,12 +70,13 @@ export default function UpgradeDialog({
   disabled = false,
   currentTier = "FREE",
   isBeta = false,
-  userData,
 }: UpgradeDialogProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<PlanOption | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const updateUserMetadata = useMutation(api.users.updateUserMetadata);
 
   const tierOrder: Tier[] = ["FREE", "PREMIUM", "ENTREPRISE"];
   const normalizedTier: Tier = currentTier;
@@ -113,21 +108,13 @@ export default function UpgradeDialog({
     setError(null);
   
     try {
-      const resp = await fetch('/api/tier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userData.id,
-          planId: selected.id,
-        }),
-      });
+      // Security fix: Tier upgrades must be handled securely on the backend via webhook
+      // await updateUserMetadata({
+      //   tier: selected.id,
+      // });
+      throw new Error("Tier upgrades are temporarily disabled for security reasons.");
   
-      if (!resp.ok) {
-        const j = await resp.json();
-        throw new Error(j.error || 'Update failed');
-      }
-  
-      console.log('Plan updated via server');
+      console.log('Plan updated successfully');
       setOpen(false);
     } catch (err: any) {
       console.error('Update error:', err);
@@ -140,23 +127,15 @@ export default function UpgradeDialog({
   const handleCancelSubscription = async () => {
     setIsProcessing(true);
     setError(null);
-
+  
     try {
-      const resp = await fetch('/api/tier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userData.id,
-          planId: "FREE",
-        }),
-      });
-
-      if (!resp.ok) {
-        const j = await resp.json();
-        throw new Error(j.error || 'Update failed');
-      }
-
-      console.log('Subscription cancelled via server');
+      // Security fix: Tier downgrades must be handled securely on the backend
+      // await updateUserMetadata({
+      //   tier: "FREE",
+      // });
+      throw new Error("Tier downgrades are temporarily disabled for security reasons.");
+  
+      console.log('Subscription cancelled successfully');
       setOpen(false);
     } catch (err: any) {
       console.error('Cancel subscription error:', err);

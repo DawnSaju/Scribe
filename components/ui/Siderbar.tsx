@@ -3,74 +3,58 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/utils/supabase/client";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { UserPlus, Settings, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { DialogDescription } from "@radix-ui/react-dialog";
-import { useSupabase } from "@/db/SupabaseProvider";
 
 export default function Sidebar() {
-  const { user } = useSupabase();
+  const user = useQuery(api.users.current);
+  const sendFriendRequest = useMutation(api.queries.sendFriendRequest);
   const [hasMounted, setHasMounted] = useState(false);
 
   type SearchUser = {
     id: string;
-    email: string;
-    full_name: string;
+    email?: string;
+    full_name?: string;
     avatar_url?: string;
   };
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
+
+  const convexSearchResults = useQuery(
+    api.users.searchUsers,
+    searchQuery.trim() ? { userinput: searchQuery } : "skip"
+  );
+
+  const isSearching = searchQuery.trim() !== '' && convexSearchResults === undefined;
+  const searchResults = convexSearchResults || [];
 
   // Prevent hydration errors by only rendering after mount
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    setIsSearching(true);
-    if (!query.trim()) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
-    const res = await fetch('/api/searchUsers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: user?.id, userinput: query }),
-    });
-    const { users } = await res.json();
-    setSearchResults(users || []);
-    setIsSearching(false);
-  };
-
   const handleSendRequest = async (reciever: SearchUser) => {
     try {
-      const { error } = await supabase
-        .from('friend_requests')
-        .insert([
-          {
-            sender_id: user?.id,
-            receiver_id: reciever.id,
-            status: 'pending'
-          }
-        ]);
+      if (!user) return;
+      await sendFriendRequest({
+        sender_id: user._id,
+        receiver_id: reciever.id,
+      });
 
-      if (error) throw error;
+
       
       setRequestSent(true);
       setTimeout(() => {
         setRequestSent(false);
         setModalOpen(false);
         setSearchQuery('');
-        setSearchResults([]);
       }, 1200);
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -94,7 +78,7 @@ export default function Sidebar() {
           <div className="absolute inset-0 flex items-center justify-center text-2xl font-semibold text-gray-700 bg-white rounded-full">
             <Image
               className="rounded-full object-cover"
-              src={hasMounted && user?.user_metadata?.avatar_url ? user.user_metadata.avatar_url : './default.svg'}
+              src={hasMounted && (user?.image || (user as any)?.avatar_url) ? (user?.image || (user as any)?.avatar_url) : './default.svg'}
               alt={hasMounted && user?.email ? user.email : 'User avatar'}
               width={70}
               height={70}
@@ -103,7 +87,7 @@ export default function Sidebar() {
         </div>
         <div className="text-center">
           <h1 className="capitalize text-lg font-semibold">
-            {hasMounted && user?.user_metadata?.full_name ? user.user_metadata.full_name : ''}
+            {hasMounted && (user?.name || (user as any)?.user_metadata?.full_name) ? (user?.name || (user as any)?.user_metadata?.full_name) : ''}
           </h1>
         </div>
       </div>
@@ -138,7 +122,7 @@ export default function Sidebar() {
             <Input
               placeholder="Search by name or email..."
               value={searchQuery}
-              onChange={e => handleSearch(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               autoFocus
               className="mb-4"
             />
@@ -156,7 +140,7 @@ export default function Sidebar() {
                       <div className="flex items-center gap-3">
                         <Image 
                           src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.email || 'User')}&background=random&color=fff&size=70`}
-                          alt={user.full_name || user.email} 
+                          alt={user.full_name || user.email || 'User'} 
                           width={32} 
                           height={32} 
                           className="rounded-full object-cover" 

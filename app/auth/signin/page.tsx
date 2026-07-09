@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, Quote } from 'lucide-react';
-import { supabase } from '@/utils/supabase/client';
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 import { RiGoogleFill } from "@remixicon/react";
@@ -16,84 +17,38 @@ export default function LoginPage() {
   const [userEmail, setUserEmail] = useState('');
   const [userPassword, setUserPassword] = useState('')
 
+  const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
+
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        console.log(user);
-        router.push('/dashboard');
-      }
-    };
-
-    checkUser();
-  }, [router]);
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   const handleTraditional = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const isDEV = typeof window !== 'undefined' && 
-              window.location.host.includes('ngrok-free.app');
-                 
-      const redirectURL = isDEV
-      ? `${window.location.origin}/auth/callback`
-      : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
-
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email: userEmail,
-        password: userPassword,
-      });
-
-      if (!error) {
-        router.push(redirectURL);
-      } else {
-        console.error("Auth error:", error.message);
-        return;
-      }
-
-      console.log("Successfully signed in:", data);
-    } catch {
-      console.error("Unexpected error during auth");
+      await signIn("password", { email: userEmail, password: userPassword, flow: "signIn" });
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Auth error:", error);
     }
   };
   
   const handleGoogleAuth = async () => {
-    const isDEV = typeof window !== 'undefined' && 
-                 window.location.host.includes('ngrok-free.app');
-                 
-    const redirectURL = isDEV
-    ? `${window.location.origin}/auth/callback`
-    : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
-
-    const {error} = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: redirectURL,
-        skipBrowserRedirect: false,
-      },
-    })
-    if (error) {
-      console.error("Google auth error:", error.message)
+    try {
+      await signIn("google", { redirectTo: "/dashboard" });
+    } catch (error) {
+      console.error("Google auth error:", error);
     }
   }
 
   const handleSlackAuth = async () => {
-    const isDEV = typeof window !== 'undefined' && 
-                 window.location.host.includes('ngrok-free.app');
-                 
-    const redirectURL = isDEV
-    ? `${window.location.origin}/auth/callback`
-    : `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
-
-    const {error} = await supabase.auth.signInWithOAuth({
-      provider: "slack_oidc",
-      options: {
-        redirectTo: redirectURL,
-        skipBrowserRedirect: false,
-      },
-    })
-    if (error) {
-      console.error("Slack auth error:", error.message)
+    try {
+      await signIn("slack", { redirectTo: "/dashboard" });
+    } catch (error) {
+      console.error("Slack auth error:", error);
     }
   }
   

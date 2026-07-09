@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSupabase } from '@/db/SupabaseProvider';
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,8 @@ const LoadingScreen = ({ message }: { message: string }) => (
 const CallbackPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, isLoading } = useSupabase();
+  const user = useQuery(api.users.current);
+  const isLoading = user === undefined;
   const [status, setStatus] = useState<'loading' | 'processing' | 'redirecting'>('loading');
 
   useEffect(() => {
@@ -59,7 +61,7 @@ const CallbackPage = () => {
 
           localStorage.setItem('user', JSON.stringify(user));
 
-          const hasOnboarded = user.user_metadata?.has_onboarded;
+          const hasOnboarded = user.has_onboarded;
 
           if (hasOnboarded === undefined || hasOnboarded === false) {
             router.replace('/onboarding');
