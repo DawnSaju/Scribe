@@ -36,6 +36,15 @@ export default function Sidebar() {
   const isSearching = searchQuery.trim() !== '' && convexSearchResults === undefined;
   const searchResults = convexSearchResults || [];
 
+  const allRequests = useQuery(api.queries.getAllFriendRequests) || [];
+
+  const getFriendStatus = (targetId: string) => {
+    const request = allRequests.find(
+      (req) => req.sender_id === targetId || req.receiver_id === targetId
+    );
+    return request ? request.status : null;
+  };
+
   // Prevent hydration errors by only rendering after mount
   useEffect(() => {
     setHasMounted(true);
@@ -172,9 +181,28 @@ export default function Sidebar() {
                           <div className="text-xs text-gray-400">{user.email}</div>
                         </div>
                       </div>
-                      <Button size="sm" className="rounded-full px-3 bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleSendRequest(user)}>
-                        <UserPlus className="h-4 w-4 mr-1" /> Request
-                      </Button>
+                      {(() => {
+                        const status = getFriendStatus(user.id);
+                        if (status === "pending") {
+                          return (
+                            <Button size="sm" className="rounded-full px-3 bg-gray-200 text-gray-500 cursor-not-allowed" disabled>
+                              Pending
+                            </Button>
+                          );
+                        }
+                        if (status === "accepted") {
+                          return (
+                            <Button size="sm" className="rounded-full px-3 bg-gray-200 text-gray-500 cursor-not-allowed" disabled>
+                              Friends
+                            </Button>
+                          );
+                        }
+                        return (
+                          <Button size="sm" className="rounded-full px-3 bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleSendRequest(user)}>
+                            <UserPlus className="h-4 w-4 mr-1" /> Request
+                          </Button>
+                        );
+                      })()}
                     </div>
                   ))
                 ) : null}
