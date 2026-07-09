@@ -1,6 +1,6 @@
 import React from "react";
 import SettingsLayout from "@/components/SettingsLayout";
-import Navigation from "@/components/ui/Navigation";
+import Navigation from "@/components/layout/Navigation";
 import Settings from "@/components/ui/Settings";
 
 export const dynamic = 'force-dynamic';

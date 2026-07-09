@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import MobileNav from "@/components/ui/MobileNav";
+import MobileNav from "@/components/layout/MobileNav";
 
 interface ChatLayoutProps {
   left: React.ReactNode;

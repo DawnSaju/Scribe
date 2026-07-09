@@ -1,9 +1,9 @@
-import { Navbar } from "@/components/ui/mini-navbar";
+import { Navbar as MiniNavbar } from "@/components/layout/MiniNavbar";
 
 export default function PrivacyPolicy() {
     return (
         <>
-            <Navbar />
+            <MiniNavbar />
             <div className="min-h-screen bg-white py-24">
                 <div className="container mx-auto px-6 py-16 max-w-4xl">
                     <div className="mb-12">

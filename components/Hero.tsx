@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 const Wrapper = dynamic(() => import("@/components/Wrapper"), { ssr: false });
 import { Platforms } from "@/components/marketing/Platforms";
-import { Navbar } from "@/components/ui/mini-navbar";
+import { Navbar as MiniNavbar } from "@/components/layout/MiniNavbar";
 
 const Logos = {
   netflix: () => (
@@ -87,7 +87,7 @@ export default function Hero() {
     <main>
       {!isLoading && (
         <>
-          <Navbar />
+          <MiniNavbar />
           <Wrapper />
           <div className="hidden lg:flex justify-center items-center">
             <Platforms>
