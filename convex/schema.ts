@@ -17,6 +17,7 @@ export default defineSchema({
     has_onboarded: v.optional(v.boolean()),
     beta: v.optional(v.boolean()),
   })
+    .index("email", ["email"])
     .searchIndex("search_name", { searchField: "name" })
     .searchIndex("search_email", { searchField: "email" }),
   
