@@ -55,7 +55,6 @@ export default function Words() {
   const words = useQuery(api.queries.getLearnedWords, user ? { userId: user._id } : "skip");
   const updateXP = useMutation(api.users.updateXP);
   const updateUserMetadata = useMutation(api.users.updateUserMetadata);
-  const updateStreak = useMutation(api.users.updateStreak);
   const addLearnedWord = useMutation(api.queries.addLearnedWord);
   const updateLearnedWord = useMutation(api.queries.updateLearnedWord);
   const deleteLearnedWord = useMutation(api.queries.deleteLearnedWord);
@@ -415,12 +414,6 @@ export default function Words() {
 
     checkUser();
   }, [user]);
-
-  useEffect(() => {
-    if (user?._id) {
-      updateStreak();
-    }
-  }, [user?._id, updateStreak]);
 
   useEffect(() => {
     if (words) {
