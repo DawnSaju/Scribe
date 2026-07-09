@@ -1,8 +1,8 @@
 import React from "react";
 import ChatLayout from "@/components/ChatLayout";
-import Navigation from "@/components/ui/Navigation";
+import Navigation from "@/components/layout/Navigation";
 import Chat from "@/components/ui/chat";
-import Sidebar from "@/components/ui/Siderbar";
+import Sidebar from "@/components/layout/Sidebar";
 
 export const dynamic = 'force-dynamic';
 
