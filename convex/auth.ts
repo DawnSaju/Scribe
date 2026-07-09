@@ -4,5 +4,11 @@ import Google from "@auth/core/providers/google";
 import Slack from "@auth/core/providers/slack";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Password, Google, Slack],
+  providers: [
+    Password, 
+    Google({
+      allowDangerousEmailAccountLinking: true,
+    }), 
+    Slack
+  ],
 });
