@@ -199,3 +199,23 @@ export const getFriends = query({
   },
 });
 
+export const getAllFriendRequests = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) return [];
+
+    const sent = await ctx.db
+      .query("friend_requests")
+      .withIndex("by_sender", (q) => q.eq("sender_id", userId))
+      .collect();
+
+    const received = await ctx.db
+      .query("friend_requests")
+      .withIndex("by_receiver", (q) => q.eq("receiver_id", userId))
+      .collect();
+
+    return [...sent, ...received];
+  },
+});
+
