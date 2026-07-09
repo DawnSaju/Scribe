@@ -62,11 +62,9 @@ export default function Navigation() {
             </Link>
           </Button>
           
-          <Button onClick={handleLogOut} variant="ghost" className="w-full justify-start gap-3" asChild>
-            <Link href="#">
-              <LogOut className="text-red-600" size={18} />
-              <span className="text-red-600">Logout</span>
-            </Link>
+          <Button onClick={handleLogOut} variant="ghost" className="w-full justify-start gap-3">
+            <LogOut className="text-red-600" size={18} />
+            <span className="text-red-600">Logout</span>
           </Button>
         </nav>
       </div>
