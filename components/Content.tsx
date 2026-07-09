@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Platforms } from "@/components/ui/Platforms";
+import { Platforms } from "@/components/marketing/Platforms";
 import Link from "next/link";
 
 const cardVariants = {

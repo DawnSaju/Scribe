@@ -1,5 +1,5 @@
 import FAQSection from "@/components/FAQSection";
-import { ProductDemo } from '@/components/ui/ProductDemo';
+import { ProductDemo } from "@/components/marketing/ProductDemo";
 import Content from "@/components/Content";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
