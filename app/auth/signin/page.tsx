@@ -107,7 +107,7 @@ export default function LoginPage() {
   return (
     <main className="bg-[#eff0ee] flex flex-col lg:flex-row min-h-screen w-full items-stretch relative font-['Inter',sans-serif]">
 
-      <div className="relative w-full lg:w-[48%] xl:w-[922px] flex-shrink-0 min-h-[300px] lg:min-h-screen overflow-hidden">
+      <div className="hidden lg:block relative lg:w-[48%] xl:w-[922px] flex-shrink-0 min-h-screen overflow-hidden">
         <Image
           src="/bg.png"
           alt="Background Graphic"
@@ -268,7 +268,7 @@ export default function LoginPage() {
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
                       placeholder="Your name"
-                      className="w-full h-[34.563px] bg-white rounded-[8px] px-[12px] py-[8px] text-[13px] text-[#666] outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#1E78FF] transition-shadow shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-gray-100"
+                      className="w-full h-[34.563px] bg-white rounded-[8px] px-[12px] py-[8px] text-[16px] md:text-[13px] text-[#666] outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#1E78FF] transition-shadow shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-gray-100"
                     />
                   )}
                   <input
@@ -278,7 +278,7 @@ export default function LoginPage() {
                     value={userEmail}
                     onChange={(e) => setUserEmail(e.target.value)}
                     placeholder="Enter your email"
-                    className="w-full h-[34.563px] bg-white rounded-[8px] px-[12px] py-[8px] text-[13px] text-[#666] outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#1E78FF] transition-shadow shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-gray-100"
+                    className="w-full h-[34.563px] bg-white rounded-[8px] px-[12px] py-[8px] text-[16px] md:text-[13px] text-[#666] outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#1E78FF] transition-shadow shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-gray-100"
                   />
                   <CustomButton type="submit" disabled={isSubmitting}>
                     <span className="font-medium text-[12px] text-[#4b4b4b] leading-[16px]">
@@ -296,7 +296,7 @@ export default function LoginPage() {
                     onChange={(e) => setOtpCode(e.target.value)}
                     placeholder="••••••"
                     disabled={isSubmitting || isSuccess}
-                    className="w-full h-[34.563px] bg-white rounded-[8px] px-[12px] py-[8px] text-[14px] text-[#666] tracking-[0.5em] text-center outline-none placeholder:text-[#666] placeholder:tracking-[0.5em] focus:ring-1 focus:ring-[#1E78FF] transition-shadow shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-gray-100 disabled:opacity-50"
+                    className="w-full h-[34.563px] bg-white rounded-[8px] px-[12px] py-[8px] text-[16px] md:text-[14px] text-[#666] tracking-[0.5em] text-center outline-none placeholder:text-[#666] placeholder:tracking-[0.5em] focus:ring-1 focus:ring-[#1E78FF] transition-shadow shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-gray-100 disabled:opacity-50"
                   />
                   <CustomButton type="submit" disabled={isSubmitting || isSuccess || otpCode.length < 6}>
                     {isSubmitting ? (
