@@ -33,22 +33,22 @@ function Progress({ stat }: { stat: Stat }) {
   }, [stat.value, stroke]);
 
   return (
-    <div key={stat.label} className="flex flex-col items-center gap-2">
-      <div className="relative w-24 h-24 flex items-center justify-center">
+    <div key={stat.label} className="flex flex-col items-center gap-[8px]">
+      <div className="relative w-[56px] h-[56px] flex items-center justify-center">
         <svg className="w-full h-full" viewBox="0 0 100 100">
           <circle
             cx="50"
             cy="50"
             r={radius}
-            strokeWidth="5"
+            strokeWidth="6"
             fill="none"
-            className="stroke-zinc-200 dark:stroke-zinc-800/50"
+            stroke="rgba(0,0,0,0.06)"
           />
           <motion.circle
             cx="50"
             cy="50"
             r={radius}
-            strokeWidth="5"
+            strokeWidth="6"
             fill="none"
             strokeLinecap="round"
             transform="rotate(-90 50 50)"
@@ -60,18 +60,18 @@ function Progress({ stat }: { stat: Stat }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-bold text-zinc-900 dark:text-white">
+          <span className="text-[14px] font-semibold text-[#4b4b4b]">
             {stat.value}
           </span>
           {stat.unit && (
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="text-[9px] text-[#606060]">
               {stat.unit}
             </span>
           )}
         </div>
       </div>
 
-      <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <div className="text-[12px] font-medium text-[#606060]">
         {stat.label}
       </div>
     </div>
@@ -85,12 +85,12 @@ export function UserProgress({
   return (
     <div
       className={cn(
-        "relative h-full rounded-3xl p-6",
+        "relative h-full rounded-[12px]",
         "transition-all duration-300",
         className
       )}
     >
-      <div className="flex justify-center items-center gap-4">
+      <div className="flex justify-center items-center gap-[16px] h-full">
         {stats.map((stat) => (
           <Progress key={stat.label} stat={stat} />
         ))}
