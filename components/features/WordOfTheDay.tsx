@@ -206,9 +206,9 @@ export default function WordOfTheDay() {
 
   if (error) {
     return (
-      <div className="w-full bg-gradient-to-r from-blue-50 via-sky-50 to-blue-50 p-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-blue-600">{error}</p>
+      <div className="w-full bg-transparent p-[16px]">
+        <div className="flex items-center justify-center min-h-[40px]">
+          <p className="text-[13px] font-medium text-red-500">{error}</p>
         </div>
       </div>
     );
@@ -216,14 +216,24 @@ export default function WordOfTheDay() {
 
   if (isLoading) {
     return (
-      <div className="w-full bg-gradient-to-r from-blue-50 via-sky-50 to-blue-50 p-2 animate-gradient">
-        <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[40px]">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
-            <RefreshCw className="h-4 w-4 text-blue-500" />
-          </motion.div>
+      <div className="w-full bg-transparent p-[16px]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <span className="text-[11px] font-medium text-[#1E78FF] bg-[#1E78FF]/10 px-[6px] py-[2px] rounded-full uppercase tracking-tight">
+                Word of the Day
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <RefreshCw className="h-3.5 w-3.5 text-[#1E78FF]/60" />
+              </motion.div>
+              <span className="text-[13px] text-[#1E78FF]/60 font-medium tracking-[-0.2px]">Finding today's word...</span>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -232,22 +242,22 @@ export default function WordOfTheDay() {
   if (!wordData) return null;
 
   return (
-    <div className="w-full bg-gradient-to-r from-blue-50 via-sky-50 to-blue-50 shadow-sm animate-gradient">
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full bg-transparent">
+      <div className="w-full">
         <div 
-          className="py-2 px-3 cursor-pointer hover:bg-opacity-90 transition-colors"
+          className="p-[16px] cursor-pointer hover:bg-[rgba(0,0,0,0.02)] transition-colors"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
-                <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-medium text-[#1E78FF] bg-[#1E78FF]/10 px-[6px] py-[2px] rounded-full uppercase tracking-tight">
                   Word of the Day
                 </span>
               </div>
               <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-bold text-blue-700">{wordData.word}</h3>
-                <p className="text-sm text-blue-600/80 italic">{wordData.phonetic}</p>
+                <h3 className="text-[16px] font-semibold text-[#1E78FF] tracking-[-0.4px]">{wordData.word}</h3>
+                <p className="text-[13px] text-[#1E78FF]/80 italic">{wordData.phonetic}</p>
                 {Audioavailable && (
                   <Button
                     variant="ghost"
@@ -296,17 +306,17 @@ export default function WordOfTheDay() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="pt-2 mt-2 border-t border-blue-100">
-                  <div className="space-y-2">
+                <div className="pt-[16px] mt-[16px] border-t border-[rgba(0,0,0,0.11)] shadow-[0px_1px_0px_0px_white]">
+                  <div className="space-y-[12px]">
                     {wordData.meanings.map((meaning, index) => (
-                      <div key={index} className="space-y-1">
-                        <p className="text-xs font-semibold text-blue-600">{meaning.partOfSpeech}</p>
-                        <ul className="list-disc list-inside space-y-0.5">
+                      <div key={index} className="space-y-[4px]">
+                        <p className="text-[12px] font-semibold text-[#1E78FF] capitalize">{meaning.partOfSpeech}</p>
+                        <ul className="list-disc list-inside space-y-[4px]">
                           {meaning.definitions.slice(0, 2).map((def, idx) => (
-                            <li key={idx} className="text-sm text-blue-900/80">
+                            <li key={idx} className="text-[13px] text-[#4b4b4b]">
                               {def.definition}
                               {def.example && (
-                                <p className="text-xs text-blue-600/70 italic mt-0.5">&quot;{def.example}&quot;</p>
+                                <p className="text-[12px] text-[#606060] italic mt-[4px] ml-[16px] px-[8px] py-[4px] bg-[rgba(0,0,0,0.02)] rounded-[6px] border border-[rgba(0,0,0,0.05)]">&quot;{def.example}&quot;</p>
                               )}
                             </li>
                           ))}

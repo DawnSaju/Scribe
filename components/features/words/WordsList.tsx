@@ -10,6 +10,8 @@ import { api } from "@/convex/_generated/api";
 import { RocketIcon, ChromeIcon, PuzzleIcon, LinkIcon, Smartphone, CheckIcon, Play, XIcon, Monitor, Loader2, ArrowRight, ArrowLeft, HelpCircle, RefreshCw, SettingsIcon, PowerIcon, Bookmark, MessageSquare, Tv2, CalendarDays, Trash2, MoreHorizontal, Plus, TrendingUp, RotateCcw, Clock, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ExtensionConnector } from "@/lib/extension";
+import { CustomButton } from "@/components/ui/CustomButton";
+import { CustomCard } from "@/components/ui/CustomCard";
 import { RiGithubFill, RiNetflixFill, RiYoutubeFill } from "@remixicon/react";
 import { UserProgress, type Stat } from "@/components/features/UserProgress";
 import {
@@ -23,20 +25,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
-  
+
   useEffect(() => {
     const media = window.matchMedia(query);
     if (media.matches !== matches) {
@@ -79,9 +74,9 @@ export default function Words() {
   };
 
   type ExtensionMessage =
-  | { type: 'AUTH_SUCCESS' }
-  | { type: 'DATA_UPDATE'; words: string[] }
-  | { type: string; [key: string]: unknown }; 
+    | { type: 'AUTH_SUCCESS' }
+    | { type: 'DATA_UPDATE'; words: string[] }
+    | { type: string;[key: string]: unknown };
 
   const [userWords, setUserWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +102,6 @@ export default function Words() {
   const [showgroupModal, setShowgroupModal] = useState(false);
   const [groupInput, setgroupInput] = useState("");
   const noOfShows = new Set(userWords.filter(word => word.show_name).map(word => word.show_name)).size;
-
   const totalTimeTrackedInSeconds = userWords.reduce((total, word) => total + (Number(word.timeTracked) || 0), 0);
   const totalMinutes = totalTimeTrackedInSeconds / 60;
 
@@ -222,11 +216,11 @@ export default function Words() {
       void currentStep;
       if (!user) return;
       const installProgress = user?.install_progress;
-      
+
       if (installProgress) {
         setcurrentStep(installProgress);
         setInstallGuide(installProgress);
-        
+
         if (installProgress >= 3) {
           setConnected(true);
         }
@@ -239,10 +233,10 @@ export default function Words() {
   const handleNextStep = async (nextStep: number) => {
     setInstallGuide(nextStep);
     setcurrentStep(nextStep);
-    
+
     if (!user) return;
-    await updateUserMetadata({ 
-      install_progress: nextStep 
+    await updateUserMetadata({
+      install_progress: nextStep
     });
   };
 
@@ -252,10 +246,10 @@ export default function Words() {
     handleDisconnect();
     setConnected(false);
     setConnectionError(false);
-    
+
     if (!user) return;
-    await updateUserMetadata({ 
-      install_progress: 1 
+    await updateUserMetadata({
+      install_progress: 1
     });
   };
 
@@ -272,7 +266,7 @@ export default function Words() {
     };
 
     ExtensionConnector.listenForMessages(messageHandler);
-    
+
     return () => {
     };
   }, []);
@@ -290,7 +284,7 @@ export default function Words() {
     };
 
     window.addEventListener('message', handleMessage);
-    
+
     return () => {
       window.removeEventListener('message', handleMessage);
     };
@@ -301,7 +295,7 @@ export default function Words() {
       setIsConnecting(true);
       setConnectionError(false);
       const isConnected = await ExtensionConnector.connect();
-      
+
       if (isConnected) {
         setConnected(true);
         setModalType("manage");
@@ -337,22 +331,22 @@ export default function Words() {
   };
 
   async function getShowThumbnail(showName: string, season: number, episode: number) {
-     const key = `${showName}_${season}_${episode}`;
-     if (netflixThumbnailUrl[key]) return; 
+    const key = `${showName}_${season}_${episode}`;
+    if (netflixThumbnailUrl[key]) return;
 
-     const res = await fetch(
-       `https://www.omdbapi.com/?t=${encodeURIComponent(showName)}&apikey=7c57638d`
-     );
-     const data = await res.json();
+    const res = await fetch(
+      `https://www.omdbapi.com/?t=${encodeURIComponent(showName)}&apikey=7c57638d`
+    );
+    const data = await res.json();
 
-     setnetflixThumbnailUrl(prev => ({
-       ...prev,
-       [key]: (data.Response === "True" && data.Poster && data.Poster !== "N/A") ? data.Poster : null
-     }));
-   }
+    setnetflixThumbnailUrl(prev => ({
+      ...prev,
+      [key]: (data.Response === "True" && data.Poster && data.Poster !== "N/A") ? data.Poster : null
+    }));
+  }
 
   const getTourClasses = (targetName: string) => {
-    return showWalkthrough && walkthroughSteps[tourStep].target === targetName 
+    return showWalkthrough && walkthroughSteps[tourStep].target === targetName
       ? "ring-2 ring-primary ring-offset-2 rounded-lg transition-all duration-300"
       : "";
   };
@@ -361,7 +355,7 @@ export default function Words() {
     const unsubscribe = ExtensionConnector.listenForWordMessages(async (word) => {
       console.log('Got word from extension:', word);
       if (!user) return;
-      
+
       try {
         const payload = {
           user_id: user._id,
@@ -395,7 +389,7 @@ export default function Words() {
     };
   }, [user]);
 
-    useEffect(() => {
+  useEffect(() => {
     userWords.forEach(word => {
       getShowThumbnail(word.show_name, word.season, word.episode);
     });
@@ -404,9 +398,9 @@ export default function Words() {
   useEffect(() => {
     const checkUser = async () => {
       if (!user) return;
-      
+
       const has_completed_tour = user.has_completed_tour;
-      
+
       if (has_completed_tour == undefined) {
         setTimeout(() => setWalkthrough(true), 1500);
       }
@@ -417,7 +411,7 @@ export default function Words() {
 
   useEffect(() => {
     if (words) {
-      setUserWords(words as any); // Type assertion for now due to subtle type differences
+      setUserWords(words as any);
       setLoading(false);
     }
   }, [words]);
@@ -454,7 +448,7 @@ export default function Words() {
     if (!user) return;
     setWalkthrough(false);
     setHasCompletedWalkThrough(true);
-    await updateUserMetadata({ 
+    await updateUserMetadata({
       has_completed_tour: true,
     });
 
@@ -484,7 +478,6 @@ export default function Words() {
 
   const handleDisconnect = async () => {
     try {
-      // Check if extension ID is set before attempting disconnect
       if (!extensionId || extensionId.trim() === '') {
         console.warn('No extension ID available for disconnect');
         setConnected(false);
@@ -531,7 +524,7 @@ export default function Words() {
     const icons: Record<string, React.JSX.Element> = {
       netflix: <RiNetflixFill className={`text-red-500 ${className}`} />,
       youtube: <RiYoutubeFill className={`text-red-500 ${className}`} />,
-      hulu: <Tv2 className={className} />, 
+      hulu: <Tv2 className={className} />,
       disney: <Tv2 className={className} />,
       prime: <Tv2 className={className} />,
       hbo: <Tv2 className={className} />,
@@ -557,7 +550,7 @@ export default function Words() {
 
   const handleInstallClick = async () => {
     const isInstalled = await ExtensionConnector.isExtensionInstalled();
-    
+
     if (isInstalled && extensionAvailable) {
       setModalType('manage');
     } else {
@@ -620,15 +613,15 @@ export default function Words() {
 
     try {
       await Promise.all(selected.map(id => updateLearnedWord({ id: id as any, group_name: groupInput.trim() })));
-      
-      setUserWords(currentWords => 
-        currentWords.map(word => 
-          selected.includes(word._id) 
+
+      setUserWords(currentWords =>
+        currentWords.map(word =>
+          selected.includes(word._id)
             ? { ...word, group_name: groupInput.trim() }
             : word
         )
       );
-      
+
       setSelected([]);
       setgroupInput("");
       setShowgroupModal(false);
@@ -640,12 +633,10 @@ export default function Words() {
   const refreshWords = async () => {
     if (!user) return;
     setLoading(true);
-    // Convex queries are reactive, but if we need to manually trigger logic we can just use the already fetched words
     if (words) setUserWords(words as any);
     setLoading(false);
   };
 
-  // Prevent hydration errors by only rendering after mount
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -655,11 +646,11 @@ export default function Words() {
   }
 
   return (
-    <div className="flex h-full flex-col p-6 relative">
+    <div className="flex h-full flex-col relative w-full">
       {!showWalkthrough && (
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="absolute top-4 right-4"
           onClick={() => {
             setWalkthrough(true);
@@ -676,8 +667,8 @@ export default function Words() {
             <h3 className="text-xl font-bold mb-2">{walkthroughSteps[tourStep].title}</h3>
             <p className="text-muted-foreground mb-6">{walkthroughSteps[tourStep].content}</p>
             <div className="flex justify-between">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handlePrevTourStep}
                 disabled={tourStep === 0}
               >
@@ -699,7 +690,7 @@ export default function Words() {
             </div>
             <div className="mt-4 flex justify-center gap-1">
               {walkthroughSteps.map((_, index) => (
-                <div 
+                <div
                   key={index}
                   className={`h-2 w-2 rounded-full ${index === tourStep ? 'bg-primary' : 'bg-muted'}`}
                 />
@@ -709,101 +700,146 @@ export default function Words() {
         </div>
       )}
 
-      <div 
-        className={`mb-6 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${getTourClasses("install-button")}`}
+      <div
+        className={`mb-[32px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-[16px] ${getTourClasses("install-button")}`}
         id="install-button"
       >
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+          <h1 className="text-[24px] font-semibold tracking-[-0.6px] text-[#4b4b4b]">
             Welcome back{hasMounted && user?.name ? `, ${user.name}` : ''}
           </h1>
-          <p className="text-muted-foreground mt-1 sm:mt-0">
+          <p className="text-[13px] text-[#606060] mt-[4px] leading-[17.875px]">
             Continue your learning journey
           </p>
         </div>
         <div className="flex flex-row gap-4">
-          <Button 
-            variant="outline"
+          <CustomButton
             onClick={handleInstallClick}
             className="w-full sm:w-auto"
           >
-            <ChromeIcon className="mr-2 h-4 w-4" />
+            <ChromeIcon className="h-4 w-4" />
             {extensionAvailable ? 'Manage Extension' : 'Install Extension'}
-          </Button>
+          </CustomButton>
         </div>
       </div>
 
-      <div 
-        className={`mb-8 grid gap-4 md:grid-cols-z2 lg:grid-cols-4 ${getTourClasses("stats-section")}`}
+      <div
+        className={`mb-8 grid gap-[16px] md:grid-cols-2 lg:grid-cols-4 ${getTourClasses("stats-section")}`}
         id="stats-section"
       >
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Words Learned</CardDescription>
-            <CardTitle className="text-2xl">{userWords.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center text-xs text-green-500">
-              <TrendingUp className="h-3 w-3 mr-1"/>
-              +{userWords.filter(w => w.is_new).length} this week
+        <CustomCard className="p-[16px] h-full">
+          <div className="flex items-center gap-[16px] h-full">
+            <div className="relative w-[56px] h-[56px] flex-shrink-0">
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="rgba(0,0,0,0.06)" />
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="#1E78FF" strokeLinecap="round" transform="rotate(-90 50 50)"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(userWords.length / Math.max(userWords.length + 5, 10), 1))}`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[16px] font-semibold text-[#4b4b4b]">{userWords.length}</span>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Current Streak</CardDescription>
-            <CardTitle className="text-2xl">{streak} day{streak== 1 ? '' : 's'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">Keep going!</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <UserProgress
-            stats={userStats}
-          />
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Points</CardDescription>
-            <CardTitle className="text-2xl">{user?.XP || 0} XP</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">{user?.XP ? "Good Progress!": "Start learning!"}</p>
-          </CardContent>
-        </Card>
+            <div className="flex flex-col gap-[4px] min-w-0">
+              <p className="text-[13px] text-[#606060] font-medium leading-[17.875px]">Total Words Learned</p>
+              <div className="flex items-center text-[12px] text-[#10b981] font-medium">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +{userWords.filter(w => w.is_new).length} this week
+              </div>
+            </div>
+          </div>
+        </CustomCard>
+
+        <CustomCard className="p-[16px] h-full">
+          <div className="flex items-center gap-[16px] h-full">
+            <div className="relative w-[56px] h-[56px] flex-shrink-0">
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="rgba(0,0,0,0.06)" />
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="#FF9500" strokeLinecap="round" transform="rotate(-90 50 50)"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(streak / 30, 1))}`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[16px] font-semibold text-[#4b4b4b]">{streak}</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-[4px] min-w-0">
+              <p className="text-[13px] text-[#606060] font-medium leading-[17.875px]">Current Streak</p>
+              <p className="text-[12px] text-[#606060]">{streak === 1 ? '1 day' : `${streak} days`} · Keep going!</p>
+            </div>
+          </div>
+        </CustomCard>
+
+        <CustomCard className="p-[16px] h-full">
+          <div className="flex items-center gap-[16px] h-full">
+            <div className="relative w-[56px] h-[56px] flex-shrink-0">
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="rgba(0,0,0,0.06)" />
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="#FF2D55" strokeLinecap="round" transform="rotate(-90 50 50)"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min(timeValue / (timeUnit === 'hrs' ? 10 : 60), 1))}`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center text-[#FF2D55]">
+                <Clock className="w-[20px] h-[20px]" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-[4px] min-w-0">
+              <p className="text-[14px] font-semibold text-[#4b4b4b] leading-[17.875px]">
+                {timeValue} {timeUnit} spent
+              </p>
+              <p className="text-[12px] text-[#606060]">
+                Learning across {noOfShows} show{noOfShows === 1 ? '' : 's'}
+              </p>
+            </div>
+          </div>
+        </CustomCard>
+
+        <CustomCard className="p-[16px] h-full">
+          <div className="flex items-center gap-[16px] h-full">
+            <div className="relative w-[56px] h-[56px] flex-shrink-0">
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="rgba(0,0,0,0.06)" />
+                <circle cx="50" cy="50" r="40" strokeWidth="6" fill="none" stroke="#AF52DE" strokeLinecap="round" transform="rotate(-90 50 50)"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - Math.min((user?.XP || 0) / Math.max((user?.XP || 0) + 50, 100), 1))}`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[14px] font-semibold text-[#4b4b4b]">{user?.XP || 0}</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-[4px] min-w-0">
+              <p className="text-[13px] text-[#606060] font-medium leading-[17.875px]">Total Points</p>
+              <p className="text-[12px] text-[#606060]">{user?.XP ? "Good Progress!" : "Start learning!"}</p>
+            </div>
+          </div>
+        </CustomCard>
       </div>
       <div className={`flex-1 ${getTourClasses("words-section")}`} id="words-section">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium">Your Word group</h2>
+          <h2 className="text-[16px] font-semibold text-[#4b4b4b] tracking-[-0.4px] leading-[24px]">Your Word group</h2>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
+            <CustomButton
               onClick={refreshWords}
-              className="h-8"
             >
-              <RefreshCw className="h-3 w-3 mr-1" />
+              <RefreshCw className="h-3 w-3" />
               Refresh
-            </Button>
+            </CustomButton>
             {(extensionId && connected && extensionAvailable) && (
               <>
-                <div className="flex items-center text-sm text-green-500">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+                <div className="flex items-center text-[12px] font-medium text-[#2CD758]">
+                  <div className="w-[6px] h-[6px] rounded-full bg-[#2CD758] mr-[6px] drop-shadow-[0px_0px_4px_rgba(44,215,88,0.5)]"></div>
                   Extension Connected
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
+                <CustomButton
                   onClick={handleDisconnect}
-                  className="h-8"
                 >
-                  <LinkIcon className="h-3 w-3 mr-1" />
+                  <LinkIcon className="h-3 w-3" />
                   Disconnect
-                </Button>
+                </CustomButton>
               </>
             )}
           </div>
@@ -817,10 +853,10 @@ export default function Words() {
           </div>
         ) : userWords.length > 0 ? (
           <div className="space-y-3 pb-6">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-8">
+            <div className="grid gap-[24px] grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
               {groups.map((col, idx) => [
                 <div key={`col-title-${idx}`} className="col-span-full">
-                  <div className="font-bold text-primary text-xl mb-2 mt-6 bg-muted/40 rounded-xl px-4 py-2">{col.name}</div>
+                  <div className="text-[16px] font-semibold tracking-[-0.4px] text-[#1E78FF] uppercase mt-[24px] mb-[12px] px-[8px]">{col.name}</div>
                 </div>,
                 ...col.words.map(word => {
                   const thumbKey = `${word.show_name}_${word.season}_${word.episode}`;
@@ -846,146 +882,81 @@ export default function Words() {
                 const thumb = netflixThumbnailUrl[thumbKey];
                 const isSelected = selected.includes(word._id);
                 return (
-                  <div
-                    role="checkbox"
-                    aria-checked={isSelected}
-                    tabIndex={0}
-                    onClick={() => selectWord(word._id)}
-                    onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') selectWord(word._id); }}
-                    className={`relative group overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-card shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer select-none ${isSelected ? 'border-2 border-primary ring-2 ring-primary' : ''}`}
+                  <WordCard
                     key={word._id}
-                  >
-                    <div className="relative aspect-video">
-                      {word.platform.toLowerCase() === 'netflix' ? (
-                        <Image
-                          src={thumb || "https://placehold.co/500x500?text=Thumbnail"}
-                          alt={word.show_name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : word.platform.toLowerCase() === 'youtube' ? (
-                        <Image
-                          src={word.thumbnailimg}
-                          alt={word.show_name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                          <Play className="h-10 w-10 text-white/50 group-hover:text-white/80 transition-colors" />
-                        </div>
-                      )}
-                      {word.platform && (
-                        <div className="absolute right-3 top-3 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                          <PlatformIcon platform={word.platform} className="h-5 w-5" />
-                        </div>
-                      )}
-                      {word.platform.toLowerCase() === "netflix" ? (
-                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                          <Tv2 className="h-3.5 w-3.5 mr-1" />
-                          S{word.season} • E{word.episode}
-                        </Badge>
-                        ) : (
-                        <Badge className="absolute left-3 top-3 bg-background/90 backdrop-blur-sm text-foreground hover:bg-background border border-gray-100 dark:border-gray-700">
-                          <Clock className="h-3.5 w-3.5" />
-                          {word.timeTracked}s
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="p-5">
-                      <div className="flex justify-between items-start gap-3 mb-3">
-                        <div>
-                          <h3 className="text-xl font-semibold tracking-tight line-clamp-1">{word.word}{word.is_new && (<span className="ml-2 inline-block h-2 w-2 rounded-full bg-green-500 animate-pulse" />)}</h3>
-                          <p className="text-sm text-muted-foreground capitalize mt-1">{word.part_of_speech}</p>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-xl w-48">
-                            <DropdownMenuItem className="gap-2">
-                              <Bookmark className="h-4 w-4" />
-                              Save to group
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2">
-                              <MessageSquare className="h-4 w-4" />
-                              Add note
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2">
-                              <Share2 className="h-4 w-4" />
-                              Share
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator/>
-                            <DropdownMenuItem className="gap-2 text-red-500" onClick={() => handleRemoveWord("grid", word._id)}>
-                              <Trash2 className="h-4 w-4" />
-                              Remove
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <p className="text-sm line-clamp-2 mb-3">{word.definition}</p>
-                      {word.example && (
-                        <div className="px-3 py-2 mb-4 text-xs italic bg-accent/20 dark:bg-accent/10 rounded-lg border border-accent/30 line-clamp-2">&quot;{word.example}&quot;</div>
-                      )}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium truncate max-w-[120px]">{word.show_name}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          <span className="text-xs">{new Date(Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    word={word}
+                    thumb={thumb}
+                    isSelected={isSelected}
+                    onSelect={selectWord}
+                    onRemove={handleRemoveWord}
+                    type="grid"
+                  />
                 );
               })}
             </div>
           </div>
         ) : (extensionId && connected && extensionAvailable) ? (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-full bg-green-500/10 animate-ping"></div>
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10">
-                <ChromeIcon className="h-10 w-10 text-green-500" />
-              </div>
+          <div className="flex flex-1 flex-col items-center justify-center p-[40px] text-center min-h-[400px]">
+            <div className="flex items-center justify-center text-[#2CD758] mb-[20px]">
+              <ChromeIcon className="w-[40px] h-[40px]" />
             </div>
-            <h3 className="mt-6 text-xl font-semibold">Ready to Collect Words</h3>
-            <p className="mb-6 mt-2 text-sm text-muted-foreground max-w-md">
+            <h3 className="text-[16px] font-semibold text-[#4b4b4b] mb-[6px] tracking-[-0.2px]">Ready to Collect Words</h3>
+            <p className="text-[13px] text-[#606060] max-w-[340px] mb-[20px] leading-relaxed">
               Your extension is connected! Start watching shows and words will automatically appear here.
             </p>
-            <div className="flex gap-3">
-              <Button>
-                <RocketIcon className="mr-2 h-4 w-4" />
-                How It Works
-              </Button>
-              <Button variant="outline" onClick={() => setOpenPlatforms(true)}>
-                <Monitor className="mr-2 h-4 w-4" />
-                Supported Platforms
-              </Button>
+            <div className="flex items-center gap-[10px]">
+              <button className="drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] h-[32px] px-[16px] flex items-center justify-center transition-transform hover:scale-[0.98] active:scale-95">
+                <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                <span className="relative z-10 text-[12px] font-medium text-[#4b4b4b] flex items-center">
+                  <RocketIcon className="mr-[6px] h-[12px] w-[12px]" />
+                  How It Works
+                </span>
+                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white] z-20" />
+              </button>
+              <button onClick={() => setOpenPlatforms(true)} className="drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] h-[32px] px-[16px] flex items-center justify-center transition-transform hover:scale-[0.98] active:scale-95">
+                <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                <span className="relative z-10 text-[12px] font-medium text-[#4b4b4b] flex items-center">
+                  <Monitor className="mr-[6px] h-[12px] w-[12px]" />
+                  Supported Platforms
+                </span>
+                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white] z-20" />
+              </button>
+              <button onClick={handleDisconnect} className="drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] h-[32px] px-[16px] flex items-center justify-center transition-transform hover:scale-[0.98] active:scale-95 ml-[4px]">
+                <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                <span className="relative z-10 text-[12px] font-medium text-[#FF2D55] flex items-center">
+                  Disconnect
+                </span>
+                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white] z-20" />
+              </button>
             </div>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-              <PuzzleIcon className="h-10 w-10 text-primary" />
+          <div className="flex flex-1 flex-col items-center justify-center p-[40px] text-center min-h-[400px]">
+            <div className="flex items-center justify-center text-[#1E78FF] mb-[20px]">
+              <PuzzleIcon className="w-[40px] h-[40px]" />
             </div>
-            <h3 className="mt-6 text-xl font-semibold">Start Collecting Words</h3>
-            <p className="mb-6 mt-2 text-sm text-muted-foreground max-w-md">
-              Use our browser extension to easily save words while watching shows. 
+            <h3 className="text-[16px] font-semibold text-[#4b4b4b] mb-[6px] tracking-[-0.2px]">Start Collecting Words</h3>
+            <p className="text-[13px] text-[#606060] max-w-[340px] mb-[20px] leading-relaxed">
+              Use our browser extension to easily save words while watching shows.
               The words you collect will appear here for review and practice.
             </p>
-            <div className="flex gap-4">
-              <Button onClick={handleInstallClick}>
-                <ChromeIcon className="mr-2 h-4 w-4" />
-                Get the Extension
-              </Button>
-              <Button variant="outline">
-                <RocketIcon className="mr-2 h-4 w-4" />
-                How It Works
-              </Button>
+            <div className="flex items-center gap-[10px]">
+              <button onClick={handleInstallClick} className="drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] h-[32px] px-[16px] flex items-center justify-center transition-transform hover:scale-[0.98] active:scale-95">
+                <div aria-hidden className="absolute bg-[#1E78FF] inset-0 pointer-events-none rounded-[8px]" />
+                <span className="relative z-10 text-[12px] font-medium text-white flex items-center drop-shadow-sm">
+                  <ChromeIcon className="mr-[6px] h-[12px] w-[12px]" />
+                  Get the Extension
+                </span>
+                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_1px_1px_rgba(255,255,255,0.3),inset_0px_-1px_1px_rgba(0,0,0,0.2)] z-20" />
+              </button>
+              <button className="drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] h-[32px] px-[16px] flex items-center justify-center transition-transform hover:scale-[0.98] active:scale-95">
+                <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                <span className="relative z-10 text-[12px] font-medium text-[#4b4b4b] flex items-center">
+                  <RocketIcon className="mr-[6px] h-[12px] w-[12px]" />
+                  How It Works
+                </span>
+                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white] z-20" />
+              </button>
             </div>
           </div>
         )}
@@ -1002,38 +973,38 @@ export default function Words() {
               Works seamlessly with these streaming services
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
             <div className="flex flex-col items-center p-6 rounded-xl border bg-gradient-to-b from-card to-muted/50 hover:shadow-md transition-all">
               <div className="flex items-center justify-center h-16 w-16 rounded-full bg-red-500/10 mb-4">
-                <RiNetflixFill className="w-8 h-8 text-red-500"/>
+                <RiNetflixFill className="w-8 h-8 text-red-500" />
               </div>
               <h4 className="font-medium text-lg">Netflix</h4>
               <p className="text-sm text-muted-foreground text-center mt-2">
                 Full subtitle support for all shows and movies
               </p>
             </div>
-            
+
             <div className="flex flex-col items-center p-6 rounded-xl border bg-gradient-to-b from-card to-muted/50 hover:shadow-md transition-all">
               <div className="flex items-center justify-center h-16 w-16 rounded-full bg-blue-500/10 mb-4">
                 <svg width="46" height="14" viewBox="0 0 46 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <g clipPath="url(#clip0_247_462)">
-                  <path d="M22.5404 13.9999V13.9772C22.5632 13.9487 22.603 13.9317 22.6371 13.9374C22.8019 13.9317 22.9611 13.9317 23.1259 13.9374C23.16 13.9374 23.1998 13.9487 23.2225 13.9772V13.9999H22.5404Z" fill="#D1EFFA"/>
-                  <path d="M23.2225 13.9778C22.9951 13.9721 22.7677 13.9721 22.5404 13.9778C22.2277 13.9607 21.9151 13.9494 21.6025 13.9266C20.7726 13.8641 19.9484 13.7391 19.1413 13.5515C16.3504 12.9035 13.9005 11.6018 11.7633 9.70902C11.5643 9.53281 11.3767 9.35092 11.1835 9.16903C11.138 9.12924 11.0982 9.0724 11.0755 9.01556C11.0414 8.93598 11.0584 8.85072 11.1153 8.78819C11.1721 8.72567 11.2631 8.70293 11.3426 8.73703C11.3938 8.75977 11.445 8.78251 11.4904 8.81093C13.531 10.0728 15.7592 10.9936 18.0954 11.5393C18.8798 11.7212 19.6699 11.8633 20.4657 11.9656C21.6082 12.1077 22.762 12.1589 23.9102 12.1191C24.5298 12.102 25.1437 12.0452 25.7576 11.9656C27.19 11.7837 28.6053 11.4597 29.9752 11.005C30.6971 10.7663 31.4019 10.4934 32.0897 10.1751C32.192 10.1183 32.3171 10.1012 32.4307 10.1296C32.6183 10.1751 32.732 10.3684 32.6865 10.556C32.6808 10.5787 32.6695 10.6071 32.6581 10.6298C32.6126 10.7151 32.5501 10.789 32.4705 10.8458C31.8169 11.3574 31.112 11.8065 30.3674 12.1816C28.9634 12.8921 27.4628 13.398 25.9167 13.6879C25.0243 13.8471 24.1262 13.9437 23.2225 13.9778Z" fill="#00A8E1"/>
-                  <path d="M14.8044 2.45571C14.9465 2.37045 15.0943 2.2795 15.2477 2.19992C15.6456 1.99529 16.089 1.89298 16.538 1.91572C16.862 1.93277 17.1576 2.02371 17.385 2.26245C17.601 2.48413 17.6805 2.75697 17.7033 3.05254C17.709 3.11507 17.709 3.17759 17.709 3.2458V6.19018C17.709 6.44596 17.6749 6.48007 17.4191 6.48007H16.7256C16.6801 6.48007 16.6347 6.48007 16.5892 6.47438C16.521 6.4687 16.4641 6.41186 16.4528 6.34365C16.4414 6.28112 16.4414 6.2186 16.4414 6.15607V3.52432C16.4471 3.41632 16.4357 3.31401 16.4073 3.2117C16.3618 3.03549 16.2027 2.91044 16.0208 2.89907C15.6854 2.87633 15.35 2.94454 15.0431 3.08665C14.9976 3.09801 14.9692 3.14349 14.9749 3.18896V6.17881C14.9749 6.23565 14.9749 6.28681 14.9635 6.34365C14.9635 6.42323 14.901 6.48007 14.8214 6.48007C14.7362 6.48575 14.6509 6.48575 14.56 6.48575H13.9574C13.7471 6.48575 13.7016 6.4346 13.7016 6.22428V3.53569C13.7016 3.43906 13.696 3.33675 13.6732 3.24012C13.6334 3.04686 13.4686 2.91044 13.2753 2.89907C12.9343 2.87633 12.5876 2.94454 12.2806 3.09233C12.2351 3.1037 12.2067 3.15485 12.2181 3.20033V6.22997C12.2181 6.44028 12.1726 6.48575 11.9623 6.48575H11.2006C11.0017 6.48575 10.9505 6.42891 10.9505 6.23565V2.29087C10.9505 2.24539 10.9562 2.19992 10.9676 2.15445C10.9903 2.08624 11.0585 2.04645 11.1267 2.04645H11.8373C11.9396 2.04645 12.0021 2.10898 12.0362 2.20561C12.0646 2.28518 12.0817 2.35908 12.1101 2.44434C12.1669 2.44434 12.201 2.40455 12.2408 2.38181C12.5535 2.18855 12.8831 2.02371 13.2526 1.9555C13.5368 1.89866 13.821 1.89866 14.1052 1.9555C14.3724 2.01235 14.6111 2.1715 14.7646 2.39887C14.7759 2.41592 14.7873 2.42729 14.7987 2.43865C14.793 2.44434 14.7987 2.44434 14.8044 2.45571Z" fill="#00A8E1"/>
-                  <path d="M26.5876 5.28674C26.6217 5.17305 26.6558 5.06506 26.6899 4.95137C26.9513 4.07033 27.2128 3.19498 27.4743 2.31394L27.5084 2.21162C27.5368 2.10931 27.6334 2.04678 27.7358 2.04678H28.5997C28.8157 2.04678 28.8612 2.10931 28.7873 2.31394L28.4463 3.21771C28.0654 4.20675 27.6846 5.20147 27.3038 6.19051C27.2924 6.22462 27.2753 6.25872 27.264 6.29283C27.2242 6.41219 27.1048 6.49177 26.9798 6.4804C26.7297 6.47472 26.4796 6.47472 26.2295 6.4804C26.0532 6.48609 25.9509 6.40651 25.8884 6.24735C25.7463 5.8722 25.5985 5.49136 25.4564 5.11621C25.1154 4.2238 24.7686 3.3314 24.4276 2.43331C24.3935 2.3651 24.3707 2.28552 24.3537 2.21162C24.3366 2.09794 24.3764 2.0411 24.4901 2.0411C24.8141 2.03542 25.1381 2.0411 25.4564 2.0411C25.5928 2.0411 25.6554 2.13205 25.6895 2.25141C25.752 2.46741 25.8145 2.68909 25.8827 2.90509C26.1158 3.69518 26.3431 4.49096 26.5762 5.28105C26.5705 5.28674 26.5762 5.28674 26.5876 5.28674Z" fill="#232F3E"/>
-                  <path d="M6.40312 2.67111C6.4429 2.65974 6.47701 2.63701 6.49975 2.6029C6.60206 2.50059 6.71006 2.40396 6.82374 2.31301C7.11932 2.08565 7.48878 1.97197 7.85825 2.00039C8.00604 2.00607 8.0572 2.05154 8.06856 2.19365C8.07993 2.38691 8.07425 2.58585 8.07425 2.77911C8.07993 2.85869 8.07425 2.93258 8.06288 3.01216C8.04014 3.11447 8.00035 3.15426 7.89804 3.16563C7.81846 3.17132 7.74457 3.16563 7.66499 3.15995C7.28416 3.12584 6.91469 3.19974 6.55659 3.3191C6.47701 3.34752 6.47701 3.40436 6.47701 3.46689V6.19527C6.47701 6.24643 6.47701 6.2919 6.47133 6.34306C6.46564 6.41695 6.4088 6.47379 6.33491 6.47379C6.29512 6.47948 6.24964 6.47948 6.20986 6.47948H5.47092C5.43113 6.47948 5.38566 6.47948 5.34587 6.47379C5.27198 6.46811 5.21513 6.40558 5.20945 6.33169C5.20377 6.28622 5.20377 6.24074 5.20377 6.19527V2.33006C5.20377 2.0686 5.23219 2.04017 5.49366 2.04017H6.03933C6.18712 2.04017 6.25533 2.09133 6.29512 2.23343C6.33491 2.37554 6.36901 2.51764 6.40312 2.67111Z" fill="#00A8E1"/>
-                  <path d="M32.9936 0.00485014C33.0946 -0.00651811 33.2083 0.0162184 33.3163 0.0616914C33.5379 0.146953 33.6914 0.351582 33.7028 0.590315C33.7483 1.10757 33.4015 1.36904 32.9411 1.35767C32.8786 1.35767 32.8161 1.3463 32.7535 1.33494C32.4011 1.24967 32.2192 0.976836 32.2533 0.584631C32.2817 0.272004 32.5262 0.0389549 32.8615 0.0105343C32.9013 0.00485014 32.9411 -0.000833984 32.9809 0.00485014Z" fill="#232F3E"/>
-                  <path d="M4.36259 3.78539C4.33986 3.48982 4.26028 3.19993 4.14091 2.93278C3.90786 2.44394 3.54976 2.08584 3.00409 1.96079C2.37883 1.82437 1.8161 1.96079 1.30453 2.34163C1.27043 2.37573 1.23064 2.40415 1.18517 2.42689C1.1738 2.4212 1.16243 2.41552 1.16243 2.40984C1.14538 2.35299 1.13401 2.29615 1.11696 2.23931C1.07148 2.09721 1.01464 2.04605 0.861172 2.04605C0.690648 2.04605 0.51444 2.05174 0.343916 2.04605C0.213181 2.04037 0.0938147 2.05742 0.00286865 2.15973C0.00286865 4.14918 0.00286865 6.14431 0.00855278 8.12807C0.0824464 8.24743 0.196129 8.27017 0.326864 8.26448C0.531492 8.2588 0.736121 8.26448 0.940749 8.26448C1.29885 8.26448 1.29885 8.26448 1.29885 7.91207V6.29209C1.29885 6.2523 1.2818 6.20683 1.32159 6.17273C1.60579 6.39441 1.95252 6.53083 2.31062 6.56493C2.81083 6.61609 3.26556 6.49104 3.64639 6.14999C3.92491 5.8942 4.12954 5.56453 4.23754 5.20074C4.39101 4.73464 4.40238 4.26286 4.36259 3.78539ZM3.00409 4.96201C2.9643 5.13822 2.87335 5.29737 2.74262 5.41674C2.59483 5.54179 2.41294 5.61568 2.21968 5.61568C1.92979 5.63273 1.64558 5.57021 1.3898 5.43379C1.32727 5.40537 1.28748 5.34284 1.29317 5.27463V4.24581C1.29317 3.90476 1.29885 3.56371 1.29317 3.22267C1.28748 3.14309 1.33295 3.07488 1.40685 3.04646C1.71947 2.89867 2.04347 2.83046 2.38452 2.89867C2.62325 2.93278 2.82788 3.08625 2.92451 3.30793C3.00977 3.48982 3.06093 3.68876 3.0723 3.88771C3.1064 4.25149 3.1064 4.61528 3.00409 4.96201Z" fill="#00A8E1"/>
-                  <path d="M45.4871 3.91164V3.93437C45.4644 3.91164 45.453 3.87753 45.4644 3.84911V3.80364C45.4644 3.80364 45.4644 3.79796 45.4701 3.79796H45.4644V3.74111H45.4758C45.4758 3.73543 45.4701 3.73543 45.4701 3.72975C45.4587 3.62175 45.436 3.51375 45.4076 3.41143C45.1973 2.66113 44.7255 2.16661 43.9581 1.97335C43.6 1.88809 43.2362 1.87672 42.8724 1.93356C42.1051 2.04724 41.5537 2.4565 41.2866 3.18407C41.0251 3.87753 41.0308 4.63921 41.2923 5.33267C41.5196 5.96361 41.9744 6.3615 42.628 6.52634C42.9748 6.6116 43.3385 6.63433 43.6966 6.58318C44.8903 6.44107 45.3848 5.5373 45.4644 4.75289H45.4587V4.67331C45.453 4.63921 45.4474 4.61078 45.4815 4.58805V4.59942C45.4815 4.59373 45.4871 4.58236 45.4928 4.57668V3.92301C45.4928 3.91732 45.4871 3.91732 45.4871 3.91164ZM44.123 4.99162C44.0888 5.11099 44.0377 5.21899 43.9638 5.3213C43.8387 5.49751 43.6398 5.61119 43.4238 5.62824C43.3158 5.63961 43.2078 5.63961 43.0998 5.61688C42.8611 5.5714 42.6621 5.41225 42.5655 5.19057C42.4802 5.01436 42.4291 4.8211 42.412 4.62784C42.3836 4.29247 42.3779 3.95711 42.4575 3.62743C42.4859 3.4967 42.5428 3.36596 42.611 3.25228C42.736 3.04765 42.952 2.91692 43.1908 2.89986C43.2988 2.8885 43.4068 2.8885 43.5148 2.91123C43.7421 2.9567 43.9297 3.10449 44.032 3.3148C44.1286 3.51375 44.1855 3.73543 44.1968 3.95711C44.2025 4.05942 44.2082 4.16174 44.2025 4.26405C44.2196 4.51415 44.1912 4.75857 44.123 4.99162Z" fill="#232F3E"/>
-                  <path d="M35.5229 0.0458984H34.7328C34.5168 0.0458984 34.4771 0.0856873 34.4771 0.301684V2.14334C34.4771 2.18313 34.4941 2.22292 34.4657 2.26271C34.4145 2.25702 34.3861 2.22292 34.3463 2.20018C33.7552 1.85345 33.1356 1.79092 32.5103 2.08082C32.0727 2.28544 31.7998 2.65491 31.6236 3.09259C31.4531 3.51322 31.4133 3.95658 31.4247 4.40562C31.4247 4.82625 31.5213 5.24119 31.7089 5.61634C31.9249 6.03128 32.2375 6.34959 32.6922 6.48601C33.3118 6.67927 33.8916 6.58264 34.4202 6.19044C34.46 6.1677 34.4827 6.12791 34.5339 6.11654C34.5623 6.17907 34.5851 6.24728 34.5964 6.31549C34.6192 6.40643 34.6987 6.46896 34.7954 6.46896H34.9318C35.1364 6.46896 35.3354 6.47464 35.5343 6.46896C35.6935 6.46896 35.7389 6.4178 35.7446 6.25296V0.261895C35.7389 0.0856873 35.6935 0.0458984 35.5229 0.0458984ZM34.4827 4.22941V5.26393C34.4941 5.33213 34.4543 5.39466 34.3918 5.42308C34.119 5.57655 33.8063 5.63908 33.4994 5.5936C33.2379 5.56518 33.0105 5.40603 32.8912 5.17298C32.8002 4.99109 32.7491 4.79783 32.732 4.59888C32.6866 4.24078 32.715 3.877 32.8002 3.53027C32.8287 3.43364 32.8628 3.34269 32.9139 3.25175C33.0333 3.03006 33.2607 2.88796 33.5108 2.87091C33.812 2.84249 34.1133 2.89933 34.3861 3.02438C34.4543 3.04712 34.4941 3.11533 34.4884 3.18922C34.4771 3.54164 34.4827 3.88268 34.4827 4.22941Z" fill="#232F3E"/>
-                  <path d="M19.7836 4.62147C20.2099 4.70104 20.6476 4.70673 21.0739 4.63852C21.324 4.60441 21.5628 4.53052 21.7844 4.41115C22.0402 4.26337 22.2278 4.05874 22.3074 3.77453C22.5063 3.05833 22.1994 2.33645 21.4548 2.06929C21.091 1.94993 20.7045 1.91014 20.3236 1.96129C19.4255 2.06361 18.8401 2.55813 18.5729 3.41643C18.3853 4.0019 18.4081 4.59873 18.5615 5.18988C18.7605 5.94587 19.2607 6.39491 20.0167 6.55407C20.4487 6.6507 20.8864 6.63365 21.3183 6.56544C21.5457 6.52565 21.7731 6.46881 21.9891 6.38354C22.1198 6.33239 22.188 6.25281 22.1823 6.10502C22.1766 5.9686 22.1823 5.8265 22.1823 5.6844C22.1823 5.51387 22.1141 5.46272 21.9493 5.50251C21.7844 5.54229 21.6253 5.5764 21.4604 5.6105C21.108 5.6844 20.7442 5.6844 20.3918 5.62187C19.9087 5.52524 19.5961 5.1103 19.6245 4.59873C19.6756 4.60441 19.7325 4.6101 19.7836 4.62147ZM19.6415 3.75179C19.6586 3.61538 19.6984 3.48464 19.7495 3.35959C19.92 2.94465 20.2782 2.80255 20.6419 2.82528C20.7442 2.83097 20.8466 2.8537 20.9432 2.89349C21.091 2.95602 21.1876 3.09244 21.2047 3.25159C21.2217 3.34822 21.216 3.45054 21.1876 3.54717C21.1194 3.75179 20.9546 3.83706 20.7556 3.87684C20.6363 3.90527 20.5112 3.91663 20.3861 3.90527C20.1645 3.90527 19.9371 3.88821 19.7154 3.85411C19.6302 3.84274 19.6302 3.84274 19.6415 3.75179Z" fill="#00A8E1"/>
-                  <path d="M38.9561 4.67728C39.2858 4.65454 39.6155 4.59202 39.9111 4.43286C40.2123 4.28507 40.4226 4.00655 40.4852 3.67687C40.5249 3.47224 40.5249 3.25625 40.4795 3.05162C40.3601 2.54005 40.0361 2.22174 39.5473 2.0569C39.2744 1.97163 38.9845 1.93753 38.7003 1.9489C37.7454 1.97163 37.0178 2.45479 36.7223 3.40972C36.5233 4.04066 36.5517 4.68296 36.745 5.3139C36.944 5.96189 37.3987 6.35409 38.0467 6.5303C38.3252 6.59851 38.6151 6.62693 38.8993 6.61556C39.3142 6.60988 39.7292 6.5303 40.1214 6.38252C40.2862 6.31999 40.326 6.26315 40.326 6.08694V5.67768C40.3203 5.51284 40.2521 5.456 40.0873 5.49579C39.9622 5.5299 39.8429 5.55832 39.7178 5.58674C39.337 5.67768 38.9391 5.69474 38.5526 5.62653C38.166 5.55263 37.9046 5.33095 37.8023 4.94443C37.7738 4.83075 37.7511 4.71707 37.7397 4.5977C37.7681 4.5977 37.7966 4.5977 37.8193 4.60907C38.1945 4.67728 38.5753 4.7057 38.9561 4.67728ZM37.7681 3.76782C37.8079 3.54614 37.8591 3.33014 37.9955 3.14825C38.2058 2.86973 38.4957 2.79015 38.8254 2.82425C38.8538 2.82425 38.8766 2.83562 38.905 2.83562C39.3029 2.89815 39.3995 3.21646 39.3256 3.5234C39.2688 3.75077 39.0812 3.83603 38.8709 3.87582C38.7572 3.89855 38.6378 3.90992 38.5185 3.90424C38.2854 3.89855 38.058 3.8815 37.8307 3.8474C37.7795 3.84171 37.7568 3.81898 37.7681 3.76782Z" fill="#00A8E1"/>
+                    <path d="M22.5404 13.9999V13.9772C22.5632 13.9487 22.603 13.9317 22.6371 13.9374C22.8019 13.9317 22.9611 13.9317 23.1259 13.9374C23.16 13.9374 23.1998 13.9487 23.2225 13.9772V13.9999H22.5404Z" fill="#D1EFFA" />
+                    <path d="M23.2225 13.9778C22.9951 13.9721 22.7677 13.9721 22.5404 13.9778C22.2277 13.9607 21.9151 13.9494 21.6025 13.9266C20.7726 13.8641 19.9484 13.7391 19.1413 13.5515C16.3504 12.9035 13.9005 11.6018 11.7633 9.70902C11.5643 9.53281 11.3767 9.35092 11.1835 9.16903C11.138 9.12924 11.0982 9.0724 11.0755 9.01556C11.0414 8.93598 11.0584 8.85072 11.1153 8.78819C11.1721 8.72567 11.2631 8.70293 11.3426 8.73703C11.3938 8.75977 11.445 8.78251 11.4904 8.81093C13.531 10.0728 15.7592 10.9936 18.0954 11.5393C18.8798 11.7212 19.6699 11.8633 20.4657 11.9656C21.6082 12.1077 22.762 12.1589 23.9102 12.1191C24.5298 12.102 25.1437 12.0452 25.7576 11.9656C27.19 11.7837 28.6053 11.4597 29.9752 11.005C30.6971 10.7663 31.4019 10.4934 32.0897 10.1751C32.192 10.1183 32.3171 10.1012 32.4307 10.1296C32.6183 10.1751 32.732 10.3684 32.6865 10.556C32.6808 10.5787 32.6695 10.6071 32.6581 10.6298C32.6126 10.7151 32.5501 10.789 32.4705 10.8458C31.8169 11.3574 31.112 11.8065 30.3674 12.1816C28.9634 12.8921 27.4628 13.398 25.9167 13.6879C25.0243 13.8471 24.1262 13.9437 23.2225 13.9778Z" fill="#00A8E1" />
+                    <path d="M14.8044 2.45571C14.9465 2.37045 15.0943 2.2795 15.2477 2.19992C15.6456 1.99529 16.089 1.89298 16.538 1.91572C16.862 1.93277 17.1576 2.02371 17.385 2.26245C17.601 2.48413 17.6805 2.75697 17.7033 3.05254C17.709 3.11507 17.709 3.17759 17.709 3.2458V6.19018C17.709 6.44596 17.6749 6.48007 17.4191 6.48007H16.7256C16.6801 6.48007 16.6347 6.48007 16.5892 6.47438C16.521 6.4687 16.4641 6.41186 16.4528 6.34365C16.4414 6.28112 16.4414 6.2186 16.4414 6.15607V3.52432C16.4471 3.41632 16.4357 3.31401 16.4073 3.2117C16.3618 3.03549 16.2027 2.91044 16.0208 2.89907C15.6854 2.87633 15.35 2.94454 15.0431 3.08665C14.9976 3.09801 14.9692 3.14349 14.9749 3.18896V6.17881C14.9749 6.23565 14.9749 6.28681 14.9635 6.34365C14.9635 6.42323 14.901 6.48007 14.8214 6.48007C14.7362 6.48575 14.6509 6.48575 14.56 6.48575H13.9574C13.7471 6.48575 13.7016 6.4346 13.7016 6.22428V3.53569C13.7016 3.43906 13.696 3.33675 13.6732 3.24012C13.6334 3.04686 13.4686 2.91044 13.2753 2.89907C12.9343 2.87633 12.5876 2.94454 12.2806 3.09233C12.2351 3.1037 12.2067 3.15485 12.2181 3.20033V6.22997C12.2181 6.44028 12.1726 6.48575 11.9623 6.48575H11.2006C11.0017 6.48575 10.9505 6.42891 10.9505 6.23565V2.29087C10.9505 2.24539 10.9562 2.19992 10.9676 2.15445C10.9903 2.08624 11.0585 2.04645 11.1267 2.04645H11.8373C11.9396 2.04645 12.0021 2.10898 12.0362 2.20561C12.0646 2.28518 12.0817 2.35908 12.1101 2.44434C12.1669 2.44434 12.201 2.40455 12.2408 2.38181C12.5535 2.18855 12.8831 2.02371 13.2526 1.9555C13.5368 1.89866 13.821 1.89866 14.1052 1.9555C14.3724 2.01235 14.6111 2.1715 14.7646 2.39887C14.7759 2.41592 14.7873 2.42729 14.7987 2.43865C14.793 2.44434 14.7987 2.44434 14.8044 2.45571Z" fill="#00A8E1" />
+                    <path d="M26.5876 5.28674C26.6217 5.17305 26.6558 5.06506 26.6899 4.95137C26.9513 4.07033 27.2128 3.19498 27.4743 2.31394L27.5084 2.21162C27.5368 2.10931 27.6334 2.04678 27.7358 2.04678H28.5997C28.8157 2.04678 28.8612 2.10931 28.7873 2.31394L28.4463 3.21771C28.0654 4.20675 27.6846 5.20147 27.3038 6.19051C27.2924 6.22462 27.2753 6.25872 27.264 6.29283C27.2242 6.41219 27.1048 6.49177 26.9798 6.4804C26.7297 6.47472 26.4796 6.47472 26.2295 6.4804C26.0532 6.48609 25.9509 6.40651 25.8884 6.24735C25.7463 5.8722 25.5985 5.49136 25.4564 5.11621C25.1154 4.2238 24.7686 3.3314 24.4276 2.43331C24.3935 2.3651 24.3707 2.28552 24.3537 2.21162C24.3366 2.09794 24.3764 2.0411 24.4901 2.0411C24.8141 2.03542 25.1381 2.0411 25.4564 2.0411C25.5928 2.0411 25.6554 2.13205 25.6895 2.25141C25.752 2.46741 25.8145 2.68909 25.8827 2.90509C26.1158 3.69518 26.3431 4.49096 26.5762 5.28105C26.5705 5.28674 26.5762 5.28674 26.5876 5.28674Z" fill="#232F3E" />
+                    <path d="M6.40312 2.67111C6.4429 2.65974 6.47701 2.63701 6.49975 2.6029C6.60206 2.50059 6.71006 2.40396 6.82374 2.31301C7.11932 2.08565 7.48878 1.97197 7.85825 2.00039C8.00604 2.00607 8.0572 2.05154 8.06856 2.19365C8.07993 2.38691 8.07425 2.58585 8.07425 2.77911C8.07993 2.85869 8.07425 2.93258 8.06288 3.01216C8.04014 3.11447 8.00035 3.15426 7.89804 3.16563C7.81846 3.17132 7.74457 3.16563 7.66499 3.15995C7.28416 3.12584 6.91469 3.19974 6.55659 3.3191C6.47701 3.34752 6.47701 3.40436 6.47701 3.46689V6.19527C6.47701 6.24643 6.47701 6.2919 6.47133 6.34306C6.46564 6.41695 6.4088 6.47379 6.33491 6.47379C6.29512 6.47948 6.24964 6.47948 6.20986 6.47948H5.47092C5.43113 6.47948 5.38566 6.47948 5.34587 6.47379C5.27198 6.46811 5.21513 6.40558 5.20945 6.33169C5.20377 6.28622 5.20377 6.24074 5.20377 6.19527V2.33006C5.20377 2.0686 5.23219 2.04017 5.49366 2.04017H6.03933C6.18712 2.04017 6.25533 2.09133 6.29512 2.23343C6.33491 2.37554 6.36901 2.51764 6.40312 2.67111Z" fill="#00A8E1" />
+                    <path d="M32.9936 0.00485014C33.0946 -0.00651811 33.2083 0.0162184 33.3163 0.0616914C33.5379 0.146953 33.6914 0.351582 33.7028 0.590315C33.7483 1.10757 33.4015 1.36904 32.9411 1.35767C32.8786 1.35767 32.8161 1.3463 32.7535 1.33494C32.4011 1.24967 32.2192 0.976836 32.2533 0.584631C32.2817 0.272004 32.5262 0.0389549 32.8615 0.0105343C32.9013 0.00485014 32.9411 -0.000833984 32.9809 0.00485014Z" fill="#232F3E" />
+                    <path d="M4.36259 3.78539C4.33986 3.48982 4.26028 3.19993 4.14091 2.93278C3.90786 2.44394 3.54976 2.08584 3.00409 1.96079C2.37883 1.82437 1.8161 1.96079 1.30453 2.34163C1.27043 2.37573 1.23064 2.40415 1.18517 2.42689C1.1738 2.4212 1.16243 2.41552 1.16243 2.40984C1.14538 2.35299 1.13401 2.29615 1.11696 2.23931C1.07148 2.09721 1.01464 2.04605 0.861172 2.04605C0.690648 2.04605 0.51444 2.05174 0.343916 2.04605C0.213181 2.04037 0.0938147 2.05742 0.00286865 2.15973C0.00286865 4.14918 0.00286865 6.14431 0.00855278 8.12807C0.0824464 8.24743 0.196129 8.27017 0.326864 8.26448C0.531492 8.2588 0.736121 8.26448 0.940749 8.26448C1.29885 8.26448 1.29885 8.26448 1.29885 7.91207V6.29209C1.29885 6.2523 1.2818 6.20683 1.32159 6.17273C1.60579 6.39441 1.95252 6.53083 2.31062 6.56493C2.81083 6.61609 3.26556 6.49104 3.64639 6.14999C3.92491 5.8942 4.12954 5.56453 4.23754 5.20074C4.39101 4.73464 4.40238 4.26286 4.36259 3.78539ZM3.00409 4.96201C2.9643 5.13822 2.87335 5.29737 2.74262 5.41674C2.59483 5.54179 2.41294 5.61568 2.21968 5.61568C1.92979 5.63273 1.64558 5.57021 1.3898 5.43379C1.32727 5.40537 1.28748 5.34284 1.29317 5.27463V4.24581C1.29317 3.90476 1.29885 3.56371 1.29317 3.22267C1.28748 3.14309 1.33295 3.07488 1.40685 3.04646C1.71947 2.89867 2.04347 2.83046 2.38452 2.89867C2.62325 2.93278 2.82788 3.08625 2.92451 3.30793C3.00977 3.48982 3.06093 3.68876 3.0723 3.88771C3.1064 4.25149 3.1064 4.61528 3.00409 4.96201Z" fill="#00A8E1" />
+                    <path d="M45.4871 3.91164V3.93437C45.4644 3.91164 45.453 3.87753 45.4644 3.84911V3.80364C45.4644 3.80364 45.4644 3.79796 45.4701 3.79796H45.4644V3.74111H45.4758C45.4758 3.73543 45.4701 3.73543 45.4701 3.72975C45.4587 3.62175 45.436 3.51375 45.4076 3.41143C45.1973 2.66113 44.7255 2.16661 43.9581 1.97335C43.6 1.88809 43.2362 1.87672 42.8724 1.93356C42.1051 2.04724 41.5537 2.4565 41.2866 3.18407C41.0251 3.87753 41.0308 4.63921 41.2923 5.33267C41.5196 5.96361 41.9744 6.3615 42.628 6.52634C42.9748 6.6116 43.3385 6.63433 43.6966 6.58318C44.8903 6.44107 45.3848 5.5373 45.4644 4.75289H45.4587V4.67331C45.453 4.63921 45.4474 4.61078 45.4815 4.58805V4.59942C45.4815 4.59373 45.4871 4.58236 45.4928 4.57668V3.92301C45.4928 3.91732 45.4871 3.91732 45.4871 3.91164ZM44.123 4.99162C44.0888 5.11099 44.0377 5.21899 43.9638 5.3213C43.8387 5.49751 43.6398 5.61119 43.4238 5.62824C43.3158 5.63961 43.2078 5.63961 43.0998 5.61688C42.8611 5.5714 42.6621 5.41225 42.5655 5.19057C42.4802 5.01436 42.4291 4.8211 42.412 4.62784C42.3836 4.29247 42.3779 3.95711 42.4575 3.62743C42.4859 3.4967 42.5428 3.36596 42.611 3.25228C42.736 3.04765 42.952 2.91692 43.1908 2.89986C43.2988 2.8885 43.4068 2.8885 43.5148 2.91123C43.7421 2.9567 43.9297 3.10449 44.032 3.3148C44.1286 3.51375 44.1855 3.73543 44.1968 3.95711C44.2025 4.05942 44.2082 4.16174 44.2025 4.26405C44.2196 4.51415 44.1912 4.75857 44.123 4.99162Z" fill="#232F3E" />
+                    <path d="M35.5229 0.0458984H34.7328C34.5168 0.0458984 34.4771 0.0856873 34.4771 0.301684V2.14334C34.4771 2.18313 34.4941 2.22292 34.4657 2.26271C34.4145 2.25702 34.3861 2.22292 34.3463 2.20018C33.7552 1.85345 33.1356 1.79092 32.5103 2.08082C32.0727 2.28544 31.7998 2.65491 31.6236 3.09259C31.4531 3.51322 31.4133 3.95658 31.4247 4.40562C31.4247 4.82625 31.5213 5.24119 31.7089 5.61634C31.9249 6.03128 32.2375 6.34959 32.6922 6.48601C33.3118 6.67927 33.8916 6.58264 34.4202 6.19044C34.46 6.1677 34.4827 6.12791 34.5339 6.11654C34.5623 6.17907 34.5851 6.24728 34.5964 6.31549C34.6192 6.40643 34.6987 6.46896 34.7954 6.46896H34.9318C35.1364 6.46896 35.3354 6.47464 35.5343 6.46896C35.6935 6.46896 35.7389 6.4178 35.7446 6.25296V0.261895C35.7389 0.0856873 35.6935 0.0458984 35.5229 0.0458984ZM34.4827 4.22941V5.26393C34.4941 5.33213 34.4543 5.39466 34.3918 5.42308C34.119 5.57655 33.8063 5.63908 33.4994 5.5936C33.2379 5.56518 33.0105 5.40603 32.8912 5.17298C32.8002 4.99109 32.7491 4.79783 32.732 4.59888C32.6866 4.24078 32.715 3.877 32.8002 3.53027C32.8287 3.43364 32.8628 3.34269 32.9139 3.25175C33.0333 3.03006 33.2607 2.88796 33.5108 2.87091C33.812 2.84249 34.1133 2.89933 34.3861 3.02438C34.4543 3.04712 34.4941 3.11533 34.4884 3.18922C34.4771 3.54164 34.4827 3.88268 34.4827 4.22941Z" fill="#232F3E" />
+                    <path d="M19.7836 4.62147C20.2099 4.70104 20.6476 4.70673 21.0739 4.63852C21.324 4.60441 21.5628 4.53052 21.7844 4.41115C22.0402 4.26337 22.2278 4.05874 22.3074 3.77453C22.5063 3.05833 22.1994 2.33645 21.4548 2.06929C21.091 1.94993 20.7045 1.91014 20.3236 1.96129C19.4255 2.06361 18.8401 2.55813 18.5729 3.41643C18.3853 4.0019 18.4081 4.59873 18.5615 5.18988C18.7605 5.94587 19.2607 6.39491 20.0167 6.55407C20.4487 6.6507 20.8864 6.63365 21.3183 6.56544C21.5457 6.52565 21.7731 6.46881 21.9891 6.38354C22.1198 6.33239 22.188 6.25281 22.1823 6.10502C22.1766 5.9686 22.1823 5.8265 22.1823 5.6844C22.1823 5.51387 22.1141 5.46272 21.9493 5.50251C21.7844 5.54229 21.6253 5.5764 21.4604 5.6105C21.108 5.6844 20.7442 5.6844 20.3918 5.62187C19.9087 5.52524 19.5961 5.1103 19.6245 4.59873C19.6756 4.60441 19.7325 4.6101 19.7836 4.62147ZM19.6415 3.75179C19.6586 3.61538 19.6984 3.48464 19.7495 3.35959C19.92 2.94465 20.2782 2.80255 20.6419 2.82528C20.7442 2.83097 20.8466 2.8537 20.9432 2.89349C21.091 2.95602 21.1876 3.09244 21.2047 3.25159C21.2217 3.34822 21.216 3.45054 21.1876 3.54717C21.1194 3.75179 20.9546 3.83706 20.7556 3.87684C20.6363 3.90527 20.5112 3.91663 20.3861 3.90527C20.1645 3.90527 19.9371 3.88821 19.7154 3.85411C19.6302 3.84274 19.6302 3.84274 19.6415 3.75179Z" fill="#00A8E1" />
+                    <path d="M38.9561 4.67728C39.2858 4.65454 39.6155 4.59202 39.9111 4.43286C40.2123 4.28507 40.4226 4.00655 40.4852 3.67687C40.5249 3.47224 40.5249 3.25625 40.4795 3.05162C40.3601 2.54005 40.0361 2.22174 39.5473 2.0569C39.2744 1.97163 38.9845 1.93753 38.7003 1.9489C37.7454 1.97163 37.0178 2.45479 36.7223 3.40972C36.5233 4.04066 36.5517 4.68296 36.745 5.3139C36.944 5.96189 37.3987 6.35409 38.0467 6.5303C38.3252 6.59851 38.6151 6.62693 38.8993 6.61556C39.3142 6.60988 39.7292 6.5303 40.1214 6.38252C40.2862 6.31999 40.326 6.26315 40.326 6.08694V5.67768C40.3203 5.51284 40.2521 5.456 40.0873 5.49579C39.9622 5.5299 39.8429 5.55832 39.7178 5.58674C39.337 5.67768 38.9391 5.69474 38.5526 5.62653C38.166 5.55263 37.9046 5.33095 37.8023 4.94443C37.7738 4.83075 37.7511 4.71707 37.7397 4.5977C37.7681 4.5977 37.7966 4.5977 37.8193 4.60907C38.1945 4.67728 38.5753 4.7057 38.9561 4.67728ZM37.7681 3.76782C37.8079 3.54614 37.8591 3.33014 37.9955 3.14825C38.2058 2.86973 38.4957 2.79015 38.8254 2.82425C38.8538 2.82425 38.8766 2.83562 38.905 2.83562C39.3029 2.89815 39.3995 3.21646 39.3256 3.5234C39.2688 3.75077 39.0812 3.83603 38.8709 3.87582C38.7572 3.89855 38.6378 3.90992 38.5185 3.90424C38.2854 3.89855 38.058 3.8815 37.8307 3.8474C37.7795 3.84171 37.7568 3.81898 37.7681 3.76782Z" fill="#00A8E1" />
                   </g>
                   <defs>
-                  <clipPath id="clip0_247_462">
-                  <rect width="45.4901" height="14" fill="white" transform="translate(0.00286865)"/>
-                  </clipPath>
+                    <clipPath id="clip0_247_462">
+                      <rect width="45.4901" height="14" fill="white" transform="translate(0.00286865)" />
+                    </clipPath>
                   </defs>
                 </svg>
               </div>
@@ -1042,17 +1013,17 @@ export default function Words() {
                 Works with English subtitled content
               </p>
             </div>
-            
+
             <div className="flex flex-col items-center p-6 rounded-xl border bg-gradient-to-b from-card to-muted/50 hover:shadow-md transition-all">
               <div className="flex items-center justify-center h-16 w-16 rounded-full bg-red-500/10 mb-4">
-                <RiYoutubeFill className="w-8 h-8 text-red-500"/>
+                <RiYoutubeFill className="w-8 h-8 text-red-500" />
               </div>
               <h4 className="font-medium text-lg">YouTube</h4>
               <p className="text-sm text-muted-foreground text-center mt-2">
                 Works with captions on most videos
               </p>
             </div>
-            
+
             <div className="flex flex-col items-center p-6 rounded-xl border border-dashed bg-gradient-to-b from-card to-muted/10 hover:shadow-md transition-all">
               <div className="flex items-center justify-center h-16 w-16 rounded-full bg-muted mb-4">
                 <Plus className="h-8 w-8 text-muted-foreground" />
@@ -1063,7 +1034,7 @@ export default function Words() {
               </p>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button onClick={() => setOpenPlatforms(false)}>
               Got It!
@@ -1078,22 +1049,22 @@ export default function Words() {
             <DialogTitle className="text-2xl">
               {isMobile ? (
                 <div className="flex items-center gap-2">
-                  <Smartphone className="h-6 w-6"/>
+                  <Smartphone className="h-6 w-6" />
                   <span>Desktop Required</span>
                 </div>
               ) : modalType === 'manage' ? (
                 <div className="flex items-center gap-2">
-                  <SettingsIcon className="w-6 h-6"/>
+                  <SettingsIcon className="w-6 h-6" />
                   <span>Manage Extension</span>
                 </div>
               ) : connectionError && extensionId ? (
                 <div className="flex items-center gap-2 text-red-600">
-                  <XIcon className="w-6 h-6"/>
+                  <XIcon className="w-6 h-6" />
                   <span>Connection Failed</span>
                 </div>
               ) : installGuide === 3 && extensionId && connected && extensionAvailable ? (
                 <div className="flex items-center gap-2 text-green-600">
-                  <CheckIcon className="w-6 h-6"/>
+                  <CheckIcon className="w-6 h-6" />
                   <span>Connected Successfully!</span>
                 </div>
               ) : (
@@ -1104,12 +1075,12 @@ export default function Words() {
               {isMobile
                 ? "The Scribe extension is only available on desktop browsers."
                 : modalType === 'manage'
-                ? "View and control your extension connection"
-                : connectionError && extensionId
-                ? "Couldn't connect to the extension. Please make sure it's installed and try again."
-                : installGuide === 3 && extensionId && connected && extensionAvailable
-                ? "Your extension is now connected to the web app. Start collecting words!"
-                : "Follow these simple steps to start learning from your favorite shows"
+                  ? "View and control your extension connection"
+                  : connectionError && extensionId
+                    ? "Couldn't connect to the extension. Please make sure it's installed and try again."
+                    : installGuide === 3 && extensionId && connected && extensionAvailable
+                      ? "Your extension is now connected to the web app. Start collecting words!"
+                      : "Follow these simple steps to start learning from your favorite shows"
               }
             </DialogDescription>
           </DialogHeader>
@@ -1118,28 +1089,28 @@ export default function Words() {
             <div className="py-4 space-y-6">
               <div className="flex justify-center items-center gap-8 py-4">
                 <div className="flex flex-col items-center">
-                  <Smartphone className="h-16 w-16 text-muted-foreground mb-2"/>
+                  <Smartphone className="h-16 w-16 text-muted-foreground mb-2" />
                   <span className="text-sm text-muted-foreground">Mobile</span>
-                  <XIcon className="h-8 w-8 text-red-500 my-2"/>
+                  <XIcon className="h-8 w-8 text-red-500 my-2" />
                 </div>
                 <div className="flex flex-col items-center">
-                  <Monitor className="h-16 w-16 text-muted-foreground mb-2"/>
+                  <Monitor className="h-16 w-16 text-muted-foreground mb-2" />
                   <span className="text-sm text-muted-foreground">Desktop</span>
-                  <CheckIcon className="h-8 w-8 text-green-500 my-2"/>
+                  <CheckIcon className="h-8 w-8 text-green-500 my-2" />
                 </div>
               </div>
-              
+
               <div className="text-center space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Please visit Scribe on your desktop to install the extension 
+                  Please visit Scribe on your desktop to install the extension
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Supported browsers: Chrome, Edge, Firefox
                 </p>
               </div>
 
-              <Button 
-                className="w-full mt-6" 
+              <Button
+                className="w-full mt-6"
                 onClick={() => setModalOpen(false)}
               >
                 Understood
@@ -1199,15 +1170,15 @@ export default function Words() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                   onClick={handleDisconnect}
                 >
                   <LinkIcon className="mr-2 h-4 w-4" />
                   Disconnect
                 </Button>
-                
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="flex-1">
@@ -1224,8 +1195,8 @@ export default function Words() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                      onClick={handleRemoveExtension}
+                      <AlertDialogAction
+                        onClick={handleRemoveExtension}
                         className="bg-destructive hover:bg-destructive/90"
                       >
                         Remove Extension
@@ -1239,25 +1210,24 @@ export default function Words() {
             <div className="py-4">
               <div className="relative mb-8 ml-4">
                 <div className="absolute left-[18px] top-0 h-full w-0.5 bg-border -z-10" />
-                <div 
-                  className="absolute left-[18px] top-0 w-0.5 bg-primary transition-all duration-500 -z-10" 
+                <div
+                  className="absolute left-[18px] top-0 w-0.5 bg-primary transition-all duration-500 -z-10"
                   style={{ height: `${((installGuide - 1) / (guide.length - 1)) * 100}%` }}
                 />
 
                 <div className="space-y-8">
                   {guide.map((step) => (
-                    <div 
+                    <div
                       key={step.id}
                       className={`flex gap-6 transition-all duration-300 ${installGuide < step.id ? "opacity-50" : ""}`}
                     >
                       <div className="flex flex-col items-center">
-                        <div className={`flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full border-2 ${
-                          installGuide > step.id 
-                            ? "bg-primary border-primary text-primary-foreground" 
-                            : installGuide === step.id 
-                              ? "border-primary" 
-                              : "border-border"
-                        }`}>
+                        <div className={`flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full border-2 ${installGuide > step.id
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : installGuide === step.id
+                            ? "border-primary"
+                            : "border-border"
+                          }`}>
                           {installGuide > step.id ? (
                             <CheckIcon className="h-5 w-5" />
                           ) : (
@@ -1267,9 +1237,8 @@ export default function Words() {
                       </div>
 
                       <div className={`flex-1 pb-8 ${installGuide === step.id ? "" : "border-b"}`}>
-                        <h3 className={`text-lg font-semibold ${
-                          installGuide === step.id ? "text-primary" : "text-foreground"
-                        }`}>
+                        <h3 className={`text-lg font-semibold ${installGuide === step.id ? "text-primary" : "text-foreground"
+                          }`}>
                           {step.title}
                         </h3>
                         <p className="text-muted-foreground mt-1">{step.description}</p>
@@ -1280,9 +1249,9 @@ export default function Words() {
                                 <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm text-green-400">
                                   <p>git clone https://github.com/DawnSaju/Scribe-Extension.git</p>
                                 </div>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   className="mt-3"
                                   onClick={() => handleCopy("git clone https://github.com/DawnSaju/Scribe-Extension.git")}
                                 >
@@ -1357,7 +1326,7 @@ export default function Words() {
                   </Button>
                 ) : (
                   <Button variant={"outline"} onClick={() => {
-                    setInstallGuide(installGuide-1);
+                    setInstallGuide(installGuide - 1);
                     setConnectionError(false);
                   }}>
                     Back
@@ -1370,7 +1339,7 @@ export default function Words() {
                   </Button>
                 ) : (
                   <div className="flex gap-3">
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={handleReset}
                       disabled={isConnecting}
@@ -1379,7 +1348,7 @@ export default function Words() {
                       Start Over
                     </Button>
                     {(extensionId && connected && extensionAvailable) && (
-                      <Button 
+                      <Button
                         variant="outline"
                         onClick={handleDisconnect}
                         disabled={isConnecting}
@@ -1388,7 +1357,7 @@ export default function Words() {
                         Disconnect
                       </Button>
                     )}
-                    <Button 
+                    <Button
                       onClick={async () => {
                         if (extensionId.trim() === '') {
                           return;
@@ -1411,17 +1380,17 @@ export default function Words() {
                     >
                       {isConnecting ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           {connectionError ? "Retrying..." : "Connecting..."}
                         </>
                       ) : connectionError ? (
                         <>
-                          <RefreshCw className="mr-2 h-4 w-4"/>
+                          <RefreshCw className="mr-2 h-4 w-4" />
                           Retry Connection
                         </>
                       ) : (extensionId && connected && extensionAvailable) ? (
                         <>
-                          <CheckIcon className="mr-2 h-4 w-4"/>
+                          <CheckIcon className="mr-2 h-4 w-4" />
                           Connected
                         </>
                       ) : (
@@ -1469,7 +1438,7 @@ export default function Words() {
               Add to group
             </DialogTitle>
           </DialogHeader>
-          <Input className="mb-4" placeholder={"Enter the name"} value={groupInput} onChange={event => setgroupInput(event.target.value)} autoFocus/>
+          <Input className="mb-4" placeholder={"Enter the name"} value={groupInput} onChange={event => setgroupInput(event.target.value)} autoFocus />
           <div className="mb-4 text-sm">
             {selected.length} word{selected.length == 1 ? '' : 's'} will be added.
           </div>
