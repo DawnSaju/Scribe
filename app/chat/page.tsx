@@ -2,7 +2,7 @@ import React from "react";
 import ChatLayout from "@/components/ChatLayout";
 import Navigation from "@/components/layout/Navigation";
 import Chat from "@/components/features/Chat";
-import Sidebar from "@/components/layout/Sidebar";
+import ProfilePane from "@/components/layout/ProfilePane";
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ export default function ChatPage() {
       <ChatLayout
         left={<Navigation />}
         mainContent={<Chat/>}
-        right={<Sidebar />}
+        right={<ProfilePane />}
       />
     </div>
   );

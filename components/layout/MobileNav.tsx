@@ -1,4 +1,6 @@
 
+"use client";
+
 import React from "react";
 import { Home, MessageSquare, Settings, LogOut } from "lucide-react";
 import Link from "next/link";

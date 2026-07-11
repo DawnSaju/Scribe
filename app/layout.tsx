@@ -33,10 +33,10 @@ export default function RootLayout({
         <link rel="icon" href="./favicon.svg" sizes="any" type="image/svg+xml"/>
         <link rel="preconnect" href="https://fonts.googleapis.com"/>
         <link rel="preconnect" href="https://fonts.gstatic.com"/>
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet"></link>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"></link>
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f3f3f3] font-['Inter',sans-serif] text-[#4b4b4b]`}
       >
         <ConvexAuthNextjsServerProvider>
           <QueryProvider>
