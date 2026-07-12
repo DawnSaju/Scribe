@@ -83,14 +83,15 @@ export default function Words() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [modalOpen, setModalOpen] = useState(false);
   const [installGuide, setInstallGuide] = useState(1);
+  const [modalType, setModalType] = useState<'install' | 'manage' | 'confirm-remove'>("install");
+  const [connectionError, setConnectionError] = useState(false);
+  const [disconnectedStatus, setDisconnectedStatus] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [showWalkthrough, setWalkthrough] = useState(false);
   const [HasCompletedWalkThrough, setHasCompletedWalkThrough] = useState(false)
   const [extensionAvailable, setExtensionAvailable] = useState(false);
-  const [connectionError, setConnectionError] = useState(false);
-  const [modalType, setModalType] = useState<'install' | 'manage'>('install');
   const [netflixThumbnailUrl, setnetflixThumbnailUrl] = useState<{ [key: string]: string | null }>({});
   const [openPlatforms, setOpenPlatforms] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -125,54 +126,15 @@ export default function Words() {
   const guide = [
     {
       id: 1,
-      title: "Clone the Repository",
-      description: "Visit GitHub and clone the extension source code",
-      icon: <RiGithubFill className="h-6 w-6" />,
-      content: (
-        <div className="mt-3 bg-gray-900 rounded-lg p-4 font-mono text-sm text-green-400">
-          <p>git clone https://github.com/DawnSaju/Scribe-Extension.git</p>
-        </div>
-      )
+      title: "Install Extension",
+      description: "Get Scribe from the Chrome Web Store",
+      icon: <ChromeIcon className="h-6 w-6" />,
     },
     {
       id: 2,
-      title: "Load Unpacked Extension",
-      description: "Install the extension in developer mode",
-      icon: <ChromeIcon className="h-6 w-6" />,
-      content: (
-        <div className="mt-3 space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">1.</span>
-            <span>Open Chrome and go to <span className="font-mono">chrome://extensions</span></span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">2.</span>
-            <span>Enable <span className="font-semibold">Developer mode</span> (toggle in top right)</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">3.</span>
-            <span>Click <span className="font-semibold">Load unpacked</span> and select the cloned folder</span>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 3,
-      title: "Pin & Connect",
-      description: "Make it accessible and link to this app",
-      icon: <LinkIcon className="h-6 w-6" />,
-      content: (
-        <div className="mt-3 space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">1.</span>
-            <span>Pin the extension to your toolbar (click the puzzle icon in Chrome)</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium">2.</span>
-            <span>Click the extension icon and select <span className="font-semibold">Connect</span></span>
-          </div>
-        </div>
-      )
+      title: "Connect to App",
+      description: "Link your extension to your account",
+      icon: <PuzzleIcon className="h-6 w-6" />,
     }
   ];
 
@@ -204,12 +166,7 @@ export default function Words() {
     }
   ];
 
-  const handleCopy = (text: string) => {
-    void copied;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+
 
   useEffect(() => {
     const checkInstallProgress = async () => {
@@ -294,6 +251,7 @@ export default function Words() {
     try {
       setIsConnecting(true);
       setConnectionError(false);
+      setDisconnectedStatus(false);
       const isConnected = await ExtensionConnector.connect();
 
       if (isConnected) {
@@ -481,7 +439,17 @@ export default function Words() {
       if (!extensionId || extensionId.trim() === '') {
         console.warn('No extension ID available for disconnect');
         setConnected(false);
-        setConnectionError(true);
+        setConnectionError(false);
+        setDisconnectedStatus(true);
+        setModalType("install");
+        return;
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        setConnected(false);
+        setExtensionAvailable(false);
+        setConnectionError(false);
+        setDisconnectedStatus(true);
         setModalType("install");
         return;
       }
@@ -492,31 +460,33 @@ export default function Words() {
           title: "Extension Disconnected",
           description: "Your extension is no longer linked to the web app.",
         });
-        setModalOpen(false);
-        setConnected(false);
-        setConnectionError(true);
-        setModalType("install");
-        setExtensionAvailable(false);
       } else {
         console.log({
-          title: "Disconnection Failed",
-          description: "Could not disconnect from the extension.",
+          title: "Forced Disconnect",
+          description: "Extension didn't respond, but you have been disconnected locally.",
           variant: "destructive",
         });
-        setConnected(false);
-        setExtensionAvailable(false);
-        setConnectionError(true);
       }
+
+      // ALWAYS reset the UI back to the clean install state
+      setConnected(false);
+      setConnectionError(false);
+      setDisconnectedStatus(true);
+      setModalType("install");
+      setExtensionAvailable(false);
+
     } catch (error) {
       console.error('Disconnection error:', error);
       console.log({
         title: "Disconnection Error",
-        description: "Failed to disconnect from extension.",
+        description: "Failed to disconnect from extension. Disconnecting locally.",
         variant: "destructive",
       });
       setConnected(false);
+      setConnectionError(false);
+      setDisconnectedStatus(true);
+      setModalType("install");
       setExtensionAvailable(false);
-      setConnectionError(true);
     }
   };
 
@@ -1043,386 +1013,252 @@ export default function Words() {
         </DialogContent>
       </Dialog>
 
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 right-4 z-50 flex gap-2">
+          <button
+            onClick={() => {
+              setModalOpen(true);
+              setModalType('install');
+              setConnectionError(true);
+            }}
+            className="bg-black text-white text-[10px] px-2 py-1 rounded shadow-lg transition-transform active:scale-95 z-[999]"
+          >
+            Test Error UI
+          </button>
+          <button
+            onClick={() => {
+              setModalOpen(true);
+              setModalType('install');
+              setConnected(true);
+              setExtensionAvailable(true);
+              setExtensionId('test_extension_id_123');
+            }}
+            className="bg-black text-white text-[10px] px-2 py-1 rounded shadow-lg transition-transform active:scale-95 z-[999]"
+          >
+            Test Connected UI
+          </button>
+          <button
+            onClick={() => {
+              setModalOpen(true);
+              setModalType('manage');
+            }}
+            className="bg-black text-white text-[10px] px-2 py-1 rounded shadow-lg transition-transform active:scale-95 z-[999]"
+          >
+            Test Manage UI
+          </button>
+        </div>
+      )}
+
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">
-              {isMobile ? (
-                <div className="flex items-center gap-2">
-                  <Smartphone className="h-6 w-6" />
-                  <span>Desktop Required</span>
-                </div>
-              ) : modalType === 'manage' ? (
-                <div className="flex items-center gap-2">
-                  <SettingsIcon className="w-6 h-6" />
-                  <span>Manage Extension</span>
-                </div>
-              ) : connectionError && extensionId ? (
-                <div className="flex items-center gap-2 text-red-600">
-                  <XIcon className="w-6 h-6" />
-                  <span>Connection Failed</span>
-                </div>
-              ) : installGuide === 3 && extensionId && connected && extensionAvailable ? (
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckIcon className="w-6 h-6" />
-                  <span>Connected Successfully!</span>
-                </div>
-              ) : (
-                "Get Started with Scribe's Extension"
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              {isMobile
-                ? "The Scribe extension is only available on desktop browsers."
-                : modalType === 'manage'
-                  ? "View and control your extension connection"
-                  : connectionError && extensionId
-                    ? "Couldn't connect to the extension. Please make sure it's installed and try again."
-                    : installGuide === 3 && extensionId && connected && extensionAvailable
-                      ? "Your extension is now connected to the web app. Start collecting words!"
-                      : "Follow these simple steps to start learning from your favorite shows"
-              }
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="sm:max-w-[340px] !bg-transparent !border-none !shadow-none !p-0 overflow-visible font-['Inter',sans-serif] outline-none [&>button.absolute]:hidden !duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
-          {isMobile ? (
-            <div className="py-4 space-y-6">
-              <div className="flex justify-center items-center gap-8 py-4">
-                <div className="flex flex-col items-center">
-                  <Smartphone className="h-16 w-16 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">Mobile</span>
-                  <XIcon className="h-8 w-8 text-red-500 my-2" />
-                </div>
-                <div className="flex flex-col items-center">
-                  <Monitor className="h-16 w-16 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">Desktop</span>
-                  <CheckIcon className="h-8 w-8 text-green-500 my-2" />
-                </div>
-              </div>
+          <div className="relative rounded-[12px] drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] w-full mx-auto">
+            <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[12px] -z-10" />
+            <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white] -z-10" />
+            <DialogTitle className="sr-only">Scribe Extension</DialogTitle>
+            <DialogDescription className="sr-only">Install or connect Scribe.</DialogDescription>
 
-              <div className="text-center space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Please visit Scribe on your desktop to install the extension
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Supported browsers: Chrome, Edge, Firefox
-                </p>
-              </div>
-
-              <Button
-                className="w-full mt-6"
-                onClick={() => setModalOpen(false)}
-              >
-                Understood
-              </Button>
-            </div>
-          ) : modalType === 'manage' ? (
-            <div className="py-4 space-y-6">
-              <div className="p-4 rounded-lg border bg-card">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 rounded-full bg-green-100 text-green-600">
-                    <CheckIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">Extension Connected</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your Scribe extension is active and working properly
+            <div className="relative">
+              <div className={`transition-all duration-300 ${isConnecting ? 'filter blur-[2px] opacity-80' : ''}`}>
+                {isMobile ? (
+                  <div className="flex flex-col items-center justify-center p-8 text-center">
+                    <div className="scribe-stagger-1 rounded-[8px] shadow-[0px_3px_5px_0px_rgba(0,0,0,0.22),0px_0px_0px_0px_rgba(96,96,96,0.31)] size-[40px] relative flex items-center justify-center mb-5 mx-auto">
+                      <div aria-hidden className="absolute bg-gradient-to-b from-[#f0f0f0] via-[rgba(240,240,240,0.6)] to-[#dadada] inset-0 pointer-events-none rounded-[8px]" />
+                      <Monitor className="w-[18px] h-[18px] text-[#1E78FF] relative z-10" />
+                      <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_12px_0px_rgba(255,255,255,0.5),inset_0px_1px_0px_0px_rgba(255,255,255,0.44),inset_0px_-0.5px_0px_0px_rgba(255,255,255,0.31)]" />
+                    </div>
+                    <h3 className="scribe-stagger-2 text-[16px] font-semibold tracking-[-0.4px] text-[#4b4b4b] mb-1.5">Desktop Required</h3>
+                    <p className="scribe-stagger-3 text-[13px] font-normal text-[#606060] leading-[17.875px] mb-6">
+                      The Scribe extension is currently only available on desktop browsers like Chrome.
                     </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg border bg-card">
-                  <h4 className="font-medium mb-3">Connection Details</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Status</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span className="text-sm font-medium">Active</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Last sync</span>
-                      <span className="text-sm font-medium">{new Date().toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Words collected</span>
-                      <span className="text-sm font-medium">{userWords.length}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-lg border bg-card">
-                  <h4 className="font-medium mb-3">Extension Information</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Version</span>
-                      <span className="text-sm font-medium">1.2.0</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Last updated</span>
-                      <span className="text-sm font-medium">2 days ago</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleDisconnect}
-                >
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                  Disconnect
-                </Button>
-
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="flex-1">
-                      <PowerIcon className="mr-2 h-4 w-4 text-white" />
-                      <h1 className="text-white">Remove</h1>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently remove the extension connection. You&apos;ll need to reinstall to use it again.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleRemoveExtension}
-                        className="bg-destructive hover:bg-destructive/90"
-                      >
-                        Remove Extension
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          ) : (
-            <div className="py-4">
-              <div className="relative mb-8 ml-4">
-                <div className="absolute left-[18px] top-0 h-full w-0.5 bg-border -z-10" />
-                <div
-                  className="absolute left-[18px] top-0 w-0.5 bg-primary transition-all duration-500 -z-10"
-                  style={{ height: `${((installGuide - 1) / (guide.length - 1)) * 100}%` }}
-                />
-
-                <div className="space-y-8">
-                  {guide.map((step) => (
-                    <div
-                      key={step.id}
-                      className={`flex gap-6 transition-all duration-300 ${installGuide < step.id ? "opacity-50" : ""}`}
+                    <button
+                      onClick={() => setModalOpen(false)}
+                      className="scribe-stagger-4 w-full drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] scribe-btn-active flex items-center justify-center cursor-pointer"
                     >
-                      <div className="flex flex-col items-center">
-                        <div className={`flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full border-2 ${installGuide > step.id
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : installGuide === step.id
-                            ? "border-primary"
-                            : "border-border"
-                          }`}>
-                          {installGuide > step.id ? (
-                            <CheckIcon className="h-5 w-5" />
-                          ) : (
-                            step.icon
-                          )}
-                        </div>
+                      <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                      <div className="relative z-10 px-[12px] py-[8px] text-[12px] font-medium text-[#4b4b4b] leading-[16px]">Understood</div>
+                      <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white]" />
+                    </button>
+                  </div>
+                ) : modalType === 'manage' ? (
+                  <div className="p-7 flex flex-col items-center text-center relative z-10">
+                    <div className="scribe-stagger-1 rounded-[8px] shadow-[0px_3px_5px_0px_rgba(0,0,0,0.22),0px_0px_0px_0px_rgba(96,96,96,0.31)] size-[40px] relative flex items-center justify-center mb-5 mx-auto">
+                      <div aria-hidden className="absolute bg-gradient-to-b from-[#22c55e] via-[#16a34a] to-[#15803d] inset-0 pointer-events-none rounded-[8px]" />
+                      <CheckIcon className="w-[18px] h-[18px] text-white relative z-10" />
+                      <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_12px_0px_rgba(255,255,255,0.5),inset_0px_1px_0px_0px_rgba(255,255,255,0.44),inset_0px_-0.5px_0px_0px_rgba(255,255,255,0.31)]" />
+                    </div>
+
+                    <h3 className="scribe-stagger-2 text-[16px] font-semibold tracking-[-0.4px] text-[#4b4b4b] mb-1.5">Extension Connected</h3>
+                    <p className="scribe-stagger-3 text-[13px] font-normal text-[#606060] leading-[17.875px] mb-6">Active and capturing your words seamlessly.</p>
+
+                    <div className="scribe-stagger-4 w-full bg-white rounded-[8px] px-4 py-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-[rgba(0,0,0,0.06)] flex justify-between items-center text-left mb-6">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-medium text-[#666] tracking-[-0.275px] uppercase">Words</span>
+                        <span className="text-[16px] font-semibold tracking-[-0.4px] text-[#4b4b4b]">{userWords.length}</span>
+                      </div>
+                      <div className="h-[28px] w-px bg-[rgba(0,0,0,0.11)] shadow-[1px_0_0_white]" />
+                      <div className="flex flex-col text-right">
+                        <span className="text-[11px] font-medium text-[#666] tracking-[-0.275px] uppercase">Synced</span>
+                        <span className="text-[13px] font-normal text-[#606060]">{new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                      </div>
+                    </div>
+
+                    <div className="scribe-stagger-4 w-full flex gap-3">
+                      <button
+                        onClick={handleDisconnect}
+                        className="flex-1 drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] scribe-btn-active flex items-center justify-center cursor-pointer"
+                      >
+                        <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                        <div className="relative z-10 px-[12px] py-[8px] text-[12px] font-medium text-[#4b4b4b] leading-[16px]">Disconnect</div>
+                        <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white]" />
+                      </button>
+                      <button onClick={() => setModalType('confirm-remove')} className="flex-1 drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] scribe-btn-active flex items-center justify-center cursor-pointer">
+                        <div aria-hidden className="absolute bg-[#ef4444] inset-0 pointer-events-none rounded-[8px]" />
+                        <div className="relative z-10 px-[12px] py-[8px] flex items-center justify-center gap-[6px] text-[12px] font-medium text-white leading-[16px]">Remove</div>
+                        <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_rgba(255,255,255,0.3),inset_0px_0px_0px_0px_white]" />
+                      </button>
+                    </div>
+                  </div>
+                ) : modalType === 'confirm-remove' ? (
+                  <div className="p-7 flex flex-col relative z-10 text-center animate-in fade-in zoom-in-95 duration-200">
+                    <h3 className="scribe-stagger-1 text-[16px] font-semibold tracking-[-0.4px] text-[#4b4b4b]">Remove connection?</h3>
+                    <p className="scribe-stagger-2 text-[13px] font-normal text-[#606060] leading-[17.875px] pt-1.5 mb-7">
+                      You'll need to reconnect the extension from the toolbar later.
+                    </p>
+                    <div className="scribe-stagger-3 mt-auto flex items-center gap-3">
+                      <button onClick={() => setModalType('manage')} className="h-auto m-0 flex-1 drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] scribe-btn-active flex items-center justify-center cursor-pointer border-none bg-transparent">
+                        <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                        <div className="relative z-10 px-[12px] py-[8px] text-[12px] font-medium text-[#4b4b4b] leading-[16px]">Cancel</div>
+                        <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white]" />
+                      </button>
+                      <button onClick={handleRemoveExtension} className="h-auto m-0 flex-1 drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] scribe-btn-active flex items-center justify-center cursor-pointer bg-transparent hover:bg-transparent">
+                        <div aria-hidden className="absolute bg-[#ef4444] inset-0 pointer-events-none rounded-[8px]" />
+                        <div className="relative z-10 px-[12px] py-[8px] text-[12px] font-medium text-white leading-[16px]">Remove</div>
+                        <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_rgba(255,255,255,0.3),inset_0px_0px_0px_0px_white]" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-7 flex flex-col relative z-10 items-center text-center">
+                    <div className="scribe-stagger-1 rounded-[8px] shadow-[0px_3px_5px_0px_rgba(0,0,0,0.22),0px_0px_0px_0px_rgba(96,96,96,0.31)] size-[40px] relative flex items-center justify-center mb-5 mx-auto">
+                      <div aria-hidden className="absolute bg-gradient-to-b from-[#f0f0f0] via-[rgba(240,240,240,0.6)] to-[#dadada] inset-0 pointer-events-none rounded-[8px]" />
+                      <PuzzleIcon className="w-[18px] h-[18px] text-[#1E78FF] relative z-10" />
+                      <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_12px_0px_rgba(255,255,255,0.5),inset_0px_1px_0px_0px_rgba(255,255,255,0.44),inset_0px_-0.5px_0px_0px_rgba(255,255,255,0.31)]" />
+                    </div>
+
+                    <h2 className="scribe-stagger-2 text-[16px] font-semibold tracking-[-0.4px] text-[#4b4b4b] mb-1.5">Scribe Extension</h2>
+                    <p className="scribe-stagger-3 text-[13px] font-normal text-[#606060] leading-[17.875px] mb-6">
+                      Install from the Web Store, then link it using your Extension ID.
+                    </p>
+
+                    <div className="w-full space-y-4">
+                      <div className="scribe-stagger-4 relative w-full text-left">
+                        <Input
+                          id="extension-id"
+                          placeholder="Extension ID (e.g. abcdef...)"
+                          value={extensionId}
+                          onChange={e => {
+                            setExtensionId(e.target.value);
+                            setConnectionError(false);
+                            setDisconnectedStatus(false);
+                          }}
+                          className="bg-white rounded-[8px] px-[12px] py-[8px] text-[13px] text-[#4b4b4b] placeholder:text-[#666] w-full border-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.04),inset_0_0_0_1px_rgba(0,0,0,0.08)] focus-visible:ring-1 focus-visible:ring-[#1E78FF] h-9"
+                        />
                       </div>
 
-                      <div className={`flex-1 pb-8 ${installGuide === step.id ? "" : "border-b"}`}>
-                        <h3 className={`text-lg font-semibold ${installGuide === step.id ? "text-primary" : "text-foreground"
-                          }`}>
-                          {step.title}
-                        </h3>
-                        <p className="text-muted-foreground mt-1">{step.description}</p>
-                        {installGuide === step.id && (
-                          <div className="mt-4">
-                            {step.id === 1 && (
-                              <>
-                                <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm text-green-400">
-                                  <p>git clone https://github.com/DawnSaju/Scribe-Extension.git</p>
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="mt-3"
-                                  onClick={() => handleCopy("git clone https://github.com/DawnSaju/Scribe-Extension.git")}
-                                >
-                                  Copy
-                                </Button>
-                              </>
-                            )}
-                            {step.id === 2 && (
-                              <div className="space-y-3 mt-3">
-                                <div className="flex items-start gap-3">
-                                  <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">1</span>
-                                  <div>
-                                    <p className="text-sm">Open Chrome and go to:</p>
-                                    <p className="text-sm font-mono bg-accent px-2 py-1 rounded mt-1">chrome://extensions</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                  <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">2</span>
-                                  <p className="text-sm">Enable <span className="font-semibold">Developer mode</span> (toggle in top right)</p>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                  <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">3</span>
-                                  <p className="text-sm">Click <span className="font-semibold">Load unpacked</span> and select the cloned folder</p>
-                                </div>
-                              </div>
-                            )}
-                            {step.id === 3 && (
-                              <>
-                                <div className="space-y-3 mt-3">
-                                  <div className="flex items-start gap-3">
-                                    <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">1</span>
-                                    <p className="text-sm">Pin the extension to your toolbar (click the puzzle icon in Chrome)</p>
-                                  </div>
-                                  <div className="flex items-start gap-3">
-                                    <span className="font-medium text-sm bg-accent rounded-full h-6 w-6 flex items-center justify-center mt-0.5">2</span>
-                                    <p className="text-sm">Click the extension icon and select <span className="font-semibold">Connect</span></p>
-                                  </div>
-                                </div>
-                                <div className="mt-4">
-                                  <Label htmlFor="extension-id" className="mb-1 block">Extension ID</Label>
-                                  <Input
-                                    id="extension-id"
-                                    placeholder="Paste your extension ID here"
-                                    value={extensionId}
-                                    onChange={e => {
-                                      setExtensionId(e.target.value);
-                                    }}
-                                    className="mb-2"
-                                    autoFocus
-                                  />
-                                  {extensionId === '' && (
-                                    <div className="text-xs text-destructive">Extension ID is required to connect.</div>
-                                  )}
-                                </div>
-                              </>
+                      <div className="scribe-stagger-4 min-h-[36px] flex flex-col justify-center">
+                        {connectionError ? (
+                          <div className="text-[12px] text-red-600 p-2.5 bg-red-50/80 backdrop-blur-sm rounded-[8px] flex items-center gap-2 border border-red-100 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)] transition-all animate-in fade-in zoom-in-95 duration-200">
+                            <XIcon className="w-3.5 h-3.5 shrink-0" /> Connection failed.
+                          </div>
+                        ) : disconnectedStatus ? (
+                          <div className="text-[12px] text-gray-600 p-2.5 bg-gray-50/80 backdrop-blur-sm rounded-[8px] flex items-center gap-2 border border-gray-200 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)] transition-all animate-in fade-in zoom-in-95 duration-200">
+                            <CheckIcon className="w-3.5 h-3.5 shrink-0 text-gray-500" /> Disconnected successfully.
+                          </div>
+                        ) : extensionId && connected && extensionAvailable ? (
+                          <div className="text-[12px] text-green-700 p-2.5 bg-green-50/80 backdrop-blur-sm rounded-[8px] flex items-center gap-2 border border-green-200 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)] transition-all animate-in fade-in zoom-in-95 duration-200">
+                            <CheckIcon className="w-3.5 h-3.5 shrink-0" /> Connected!
+                          </div>
+                        ) : null}
+
+                        <button
+                          onClick={async () => {
+                            if (extensionId.trim() === '') return;
+
+                            if (process.env.NODE_ENV === 'development') {
+                              if (extensionId.trim() === 'error') {
+                                setIsConnecting(true);
+                                setConnectionError(false);
+                                setTimeout(() => {
+                                  setIsConnecting(false);
+                                  setConnectionError(true);
+                                }, 800);
+                                return;
+                              }
+                              if (extensionId.trim() === 'success') {
+                                setIsConnecting(true);
+                                setConnectionError(false);
+                                setTimeout(() => {
+                                  setIsConnecting(false);
+                                  setConnected(true);
+                                  setExtensionAvailable(true);
+                                  setModalType('manage');
+                                }, 800);
+                                return;
+                              }
+                            }
+
+                            ExtensionConnector.setExtensionId(extensionId.trim());
+                            handleConnect();
+                            if (typeof window !== 'undefined') {
+                              localStorage.setItem('extensionId', extensionId.trim());
+                            }
+                            if (user) {
+                              await updateUserMetadata({ extensionId: extensionId.trim() });
+                            }
+                            step3();
+                          }}
+                          disabled={isConnecting || (extensionId && connected && extensionAvailable) || extensionId.trim() === ''}
+                          className={`w-full drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] scribe-btn-active flex items-center justify-center cursor-pointer transition-opacity ${isConnecting || extensionId.trim() === '' ? 'opacity-50 cursor-not-allowed' : ''} ${(!connectionError && !(extensionId && connected && extensionAvailable)) ? 'mt-[-36px]' : 'mt-0'}`}
+                        >
+                          <div aria-hidden className={`absolute inset-0 pointer-events-none rounded-[8px] transition-colors duration-300 ${extensionId && connected && extensionAvailable ? 'bg-[#22c55e]' : 'bg-[#1E78FF]'}`} />
+                          <div className="relative z-10 px-[12px] py-[8px] flex items-center justify-center gap-[6px] text-[12px] font-medium text-white leading-[16px]">
+                            {isConnecting ? (
+                              <><Loader2 className="w-[18px] h-[18px] animate-spin" /> Connecting...</>
+                            ) : connectionError ? (
+                              <><RefreshCw className="w-[18px] h-[18px]" /> Retry</>
+                            ) : (extensionId && connected && extensionAvailable) ? (
+                              <><CheckIcon className="w-[18px] h-[18px]" /> Connected</>
+                            ) : (
+                              "Connect Extension"
                             )}
                           </div>
-                        )}
+                          <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_rgba(255,255,255,0.4),inset_0px_0px_0px_0px_white]" />
+                        </button>
                       </div>
+
+                      <div className="scribe-stagger-4 flex items-center gap-3 pt-3 pb-1 w-full">
+                        <div className="bg-[rgba(0,0,0,0.11)] h-px flex-1 shadow-[0px_1px_0px_0px_white]" />
+                        <span className="text-[11px] font-medium text-[#666] tracking-[-0.275px] uppercase">OR</span>
+                        <div className="bg-[rgba(0,0,0,0.11)] h-px flex-1 shadow-[0px_1px_0px_0px_white]" />
+                      </div>
+
+                      <a href="https://chromewebstore.google.com/detail/scribe/njbhddgbibpgppbmbdpcoibbmhhdbpmc" target="_blank" rel="noreferrer" className="scribe-stagger-4 w-full drop-shadow-[0px_0px_0.5px_rgba(0,0,0,0.35),-3px_3px_3.5px_rgba(0,0,0,0.04)] relative rounded-[8px] scribe-btn-active flex items-center justify-center cursor-pointer">
+                        <div aria-hidden className="absolute bg-[#f5f5f5] inset-0 pointer-events-none rounded-[8px]" />
+                        <div className="relative z-10 px-[12px] py-[8px] flex items-center justify-center gap-[6px] text-[12px] font-medium text-[#4b4b4b] leading-[16px]">
+                          <ChromeIcon className="w-[18px] h-[18px] text-[#1E78FF]" />
+                          Get from Web Store
+                        </div>
+                        <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_2px_0px_12px_0px_white,inset_0px_0px_0px_0px_white]" />
+                      </a>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-8 flex justify-between">
-                {installGuide === 1 ? (
-                  <Button variant={"outline"} onClick={() => {
-                    setModalOpen(false);
-                    setConnectionError(false);
-                  }}>
-                    Cancel
-                  </Button>
-                ) : (
-                  <Button variant={"outline"} onClick={() => {
-                    setInstallGuide(installGuide - 1);
-                    setConnectionError(false);
-                  }}>
-                    Back
-                  </Button>
-                )}
-
-                {installGuide < 3 ? (
-                  <Button onClick={() => handleNextStep(installGuide + 1)}>
-                    {installGuide == 1 ? "Install Extension" : "Next Step"}
-                  </Button>
-                ) : (
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={handleReset}
-                      disabled={isConnecting}
-                    >
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Start Over
-                    </Button>
-                    {(extensionId && connected && extensionAvailable) && (
-                      <Button
-                        variant="outline"
-                        onClick={handleDisconnect}
-                        disabled={isConnecting}
-                      >
-                        <XIcon className="mr-2 h-4 w-4" />
-                        Disconnect
-                      </Button>
-                    )}
-                    <Button
-                      onClick={async () => {
-                        if (extensionId.trim() === '') {
-                          return;
-                        }
-                        ExtensionConnector.setExtensionId(extensionId.trim());
-                        handleConnect();
-                        if (typeof window !== 'undefined') {
-                          localStorage.setItem('extensionId', extensionId.trim());
-                        }
-                        if (user) {
-                          await updateUserMetadata({
-                            extensionId: extensionId.trim(),
-                          });
-                        }
-                        step3();
-                      }}
-                      disabled={isConnecting || (extensionId && connected && extensionAvailable) || extensionId.trim() === ''}
-                      className="flex-1"
-                      variant={connectionError ? "destructive" : (extensionId && connected && extensionAvailable) ? "default" : "default"}
-                    >
-                      {isConnecting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {connectionError ? "Retrying..." : "Connecting..."}
-                        </>
-                      ) : connectionError ? (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Retry Connection
-                        </>
-                      ) : (extensionId && connected && extensionAvailable) ? (
-                        <>
-                          <CheckIcon className="mr-2 h-4 w-4" />
-                          Connected
-                        </>
-                      ) : (
-                        "Connect to App"
-                      )}
-                    </Button>
                   </div>
                 )}
               </div>
-
-              <div className="mt-12 border-t pt-6">
-                <h4 className="text-sm font-medium mb-3">Need help?</h4>
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="https://github.com/DawnSaju/Scribe-Extension" target="_blank" className="flex items-center">
-                      <RiGithubFill className="mr-2 h-4 w-4" />
-                      GitHub Repository
-                    </a>
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="https://developer.chrome.com/docs/extensions/mv3/getstarted/" target="_blank" className="flex items-center">
-                      <ChromeIcon className="mr-2 h-4 w-4" />
-                      Chrome Extension Guide
-                    </a>
-                  </Button>
-                </div>
-              </div>
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
-
       {selected.length > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white border shadow-lg rounded-full px-6 py-3 flex items-center gap-4">
           <span className="font-medium">{selected.length} selected</span>
