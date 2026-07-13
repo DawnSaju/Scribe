@@ -16,7 +16,6 @@ export default function MobileNav() {
   const handleLogOut = async () => {
       try {
           await signOut();
-          router.push("/auth")
       } catch (error: any) {
           console.error("Logout error:", error.message)
       }
