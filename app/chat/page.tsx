@@ -3,17 +3,28 @@ import ChatLayout from "@/components/ChatLayout";
 import Navigation from "@/components/layout/Navigation";
 import Chat from "@/components/features/Chat";
 import ProfilePane from "@/components/layout/ProfilePane";
+import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { redirect } from "next/navigation";
+
+import ClientAuthGuard from "@/components/layout/ClientAuthGuard";
 
 export const dynamic = 'force-dynamic';
 
-export default function ChatPage() {
+export default async function ChatPage() {
+  const token = await convexAuthNextjsToken();
+  if (!token) {
+    redirect("/auth");
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <ChatLayout
-        left={<Navigation />}
-        mainContent={<Chat/>}
-        right={<ProfilePane />}
-      />
-    </div>
+    <ClientAuthGuard>
+      <div className="min-h-screen bg-background">
+        <ChatLayout
+          left={<Navigation />}
+          mainContent={<Chat/>}
+          right={<ProfilePane />}
+        />
+      </div>
+    </ClientAuthGuard>
   );
 };
