@@ -76,13 +76,7 @@ export default function NavPane() {
                     <span className={`relative z-10 text-[12px] font-medium leading-[16px] ${isActive ? 'text-[#1E78FF]' : 'text-[#4b4b4b]'}`}>
                       {item.label}
                     </span>
-                    {item.label === 'Chat' && pendingRequests.length > 0 && (
-                      <div className="ml-auto opacity-90 px-[6px] py-[2px] rounded-[6px] shadow-[0px_3px_7px_0px_rgba(0,0,0,0.31),0px_0px_0px_0px_#606060] relative">
-                        <div aria-hidden className="absolute bg-[rgba(128,128,128,0.85)] inset-0 pointer-events-none rounded-[6px]" />
-                        <p className="relative z-10 text-[9px] text-white font-medium">{pendingRequests.length}</p>
-                        <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_12px_0px_rgba(255,255,255,0.5),inset_0px_1px_0px_0px_rgba(255,255,255,0.44),inset_0px_-0.5px_0px_0px_rgba(255,255,255,0.31)]" />
-                      </div>
-                    )}
+
                   </div>
                 </Link>
               );
@@ -150,8 +144,8 @@ export default function NavPane() {
             <p className="text-[12px] font-medium text-[#4b4b4b] truncate">{user?.name || "User"}</p>
             <p className="text-[11px] text-[#606060] truncate">{user?.email}</p>
           </div>
-          <div className="ml-auto text-[#606060]">
-            <ChevronRight size={18} />
+          <div className="ml-auto flex items-center gap-[8px]">
+            <ChevronRight size={18} className="text-[#606060]" />
           </div>
         </div>
       </div>
