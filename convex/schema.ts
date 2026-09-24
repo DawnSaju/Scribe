@@ -43,8 +43,16 @@ export default defineSchema({
     phonetic: v.optional(v.string()),
     phonetics: v.optional(v.any()),
     meanings: v.optional(v.any()),
+    selectionVersion: v.optional(v.number()),
     updated_at: v.string(),
   }).index("by_date_id", ["id"]),
+
+  daily_word_rate_limits: defineTable({
+    key: v.string(),
+    windowStartedAt: v.number(),
+    count: v.number(),
+    lastRequestAt: v.number(),
+  }).index("by_key", ["key"]),
 
   onboarding: defineTable({
     id: v.string(),

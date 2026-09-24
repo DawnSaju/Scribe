@@ -2,6 +2,11 @@ import { query, mutation } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { auth } from "./auth";
+import { checkDailyWordRateLimit } from "./model/dailyWordRateLimit";
+
+const USER_DAILY_WORD_REQUESTS_PER_HOUR = 3;
+const USER_DAILY_WORD_COOLDOWN_MS = 60_000;
+const GLOBAL_DAILY_WORD_REQUESTS_PER_HOUR = 900;
 
 export const getLearnedWords = query({
   args: { userId: v.id("users") },
@@ -40,6 +45,58 @@ export const getWordOfTheDay = query({
   },
 });
 
+export const reserveWordOfTheDayRequest = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await auth.getUserId(ctx);
+    if (!userId) return { status: "unauthorized" as const };
+
+    const now = Date.now();
+    const userKey = `user:${userId}`;
+    const userLimit = await ctx.db
+      .query("daily_word_rate_limits")
+      .withIndex("by_key", (q) => q.eq("key", userKey))
+      .unique();
+    const globalLimit = await ctx.db
+      .query("daily_word_rate_limits")
+      .withIndex("by_key", (q) => q.eq("key", "global"))
+      .unique();
+
+    const userDecision = checkDailyWordRateLimit(
+      userLimit,
+      now,
+      USER_DAILY_WORD_REQUESTS_PER_HOUR,
+      USER_DAILY_WORD_COOLDOWN_MS
+    );
+    const globalDecision = checkDailyWordRateLimit(
+      globalLimit,
+      now,
+      GLOBAL_DAILY_WORD_REQUESTS_PER_HOUR
+    );
+    if (!userDecision.allowed || !globalDecision.allowed) {
+      return {
+        status: "limited" as const,
+        retryAfterSeconds: Math.max(
+          userDecision.allowed ? 0 : userDecision.retryAfterSeconds,
+          globalDecision.allowed ? 0 : globalDecision.retryAfterSeconds
+        ),
+      };
+    }
+
+    if (userLimit) {
+      await ctx.db.patch(userLimit._id, userDecision.next);
+    } else {
+      await ctx.db.insert("daily_word_rate_limits", { key: userKey, ...userDecision.next });
+    }
+    if (globalLimit) {
+      await ctx.db.patch(globalLimit._id, globalDecision.next);
+    } else {
+      await ctx.db.insert("daily_word_rate_limits", { key: "global", ...globalDecision.next });
+    }
+    return { status: "allowed" as const };
+  },
+});
+
 export const addLearnedWord = mutation({
   args: {
     user_id: v.optional(v.string()),
@@ -68,6 +125,7 @@ export const updateWordOfTheDay = mutation({
     phonetic: v.optional(v.string()),
     phonetics: v.optional(v.any()),
     meanings: v.optional(v.any()),
+    selectionVersion: v.optional(v.number()),
     updated_at: v.string(),
   },
   handler: async (ctx, args) => {
@@ -354,5 +412,4 @@ export const cancelFriendRequest = mutation({
     return { success: true };
   },
 });
-
 
