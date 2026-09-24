@@ -1,48 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Volume2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { DailyWord } from "@/lib/dailyWord";
 
-interface Phonetic {
-  text: string;
-  audio: string;
-  license?: {
-    url: string;
-    name: string;
-  };
-  sourceUrl?: string;
-}
-
-interface Word_Structure {
-  word: string;
-  phonetic?: string;
-  phonetics: Phonetic[];
-  meanings: Array<{
-    partOfSpeech: string;
-    definitions: Array<{
-      definition: string;
-      example?: string;
-      synonyms: string[];
-      antonyms: string[];
-    }>;
-    synonyms: string[];
-    antonyms: string[];
-  }>;
-}
+const CURRENT_SELECTION_VERSION = 2;
 
 export default function WordOfTheDay() {
-  const [wordData, setWordData] = useState<Word_Structure | null>(null);
+  const [wordData, setWordData] = useState<DailyWord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [Audioavailable, setAudioavailable] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const [audioAvailable, setAudioAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const MAX_RETRIES = 5;
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
+  const pendingDay = useRef<string | null>(null);
   const user = useQuery(api.users.current);
   const userLoading = user === undefined;
   const wordOfTheDay = useQuery(api.queries.getWordOfTheDay, user ? { userId: user._id } : "skip");
@@ -56,56 +32,18 @@ export default function WordOfTheDay() {
     );
   }, []);
 
-  const getAudioUrl = useCallback((phonetics: Phonetic[]): string | null => {
-    const phoneticWithAudio = phonetics.find(p => p.audio);
-    if (phoneticWithAudio?.audio) {
-      return phoneticWithAudio.audio;
-    }
-    return `https://api.dictionaryapi.dev/media/pronunciations/en/${wordData?.word}.mp3`;
-  }, [wordData]);
-
-  const fetchWordFromAPI = useCallback(async () => {
-    if (retryCount >= MAX_RETRIES) {
-      console.log("Max retries reached. Please try again later.");
-      setIsLoading(false);
-      setRetryCount(0);
-      return null;
-    }
-
-    try {
-      const wordResponse = await fetch("https://random-word-api.herokuapp.com/word");
-      const randomWord = await wordResponse.json();
-      
-      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${randomWord}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          setRetryCount(prev => prev + 1);
-          return fetchWordFromAPI();
-        }
-        console.warn(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (Array.isArray(data) && data.length > 0) {
-        setRetryCount(0);
-        setAudioavailable(!!data[0].phonetics?.[0]?.audio);
-        return data[0];
-      } else {
-        setRetryCount(prev => prev + 1);
-        return fetchWordFromAPI();
-      }
-    } catch (error) {
-      if (error instanceof Error && !error.message.includes('404')) {
-        console.error("Error fetching word:", error);
-      }
-      setRetryCount(prev => prev + 1);
-      return fetchWordFromAPI();
-    }
+  const showWord = useCallback((word: DailyWord) => {
+    setWordData(word);
+    setAudioAvailable(word.phonetics?.some((phonetic) => Boolean(phonetic.audio)) ?? false);
   }, []);
 
-  const fetchWord = useCallback(async () => {
+  useEffect(() => {
+    if (retryAfterSeconds === 0) return;
+    const timer = setTimeout(() => setRetryAfterSeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [retryAfterSeconds]);
+
+  const loadWord = useCallback(async () => {
     if (userLoading) {
       return;
     }
@@ -116,99 +54,142 @@ export default function WordOfTheDay() {
       return;
     }
 
+    if (wordOfTheDay === undefined) return;
+
+    const now = new Date();
+    const existingWord = wordOfTheDay;
+    const needsNewWord = !existingWord ||
+      existingWord.selectionVersion !== CURRENT_SELECTION_VERSION ||
+      !isSameDay(new Date(existingWord.updated_at), now) ||
+      !Array.isArray(existingWord.meanings) ||
+      existingWord.meanings.length === 0;
+
+    if (!needsNewWord) {
+      setError(null);
+      showWord({
+        word: existingWord.word,
+        phonetic: existingWord.phonetic,
+        phonetics: existingWord.phonetics ?? [],
+        meanings: existingWord.meanings,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    const dayKey = `${user._id}:${now.toDateString()}`;
+    if (pendingDay.current === dayKey) return;
+    pendingDay.current = dayKey;
     setIsLoading(true);
     setError(null);
-    setAudioavailable(false);
+    setAudioAvailable(false);
+    setRetryAfterSeconds(0);
 
     try {
-      if (!user) {
-        setError("Session expired. Please sign in again.");
+      const response = await fetch("/api/word-of-the-day", { method: "POST", cache: "no-store" });
+      if (!response.ok) {
+        const retryAfter = Number(response.headers.get("Retry-After"));
+        if (Number.isFinite(retryAfter) && retryAfter > 0) {
+          setRetryAfterSeconds(Math.min(3600, Math.ceil(retryAfter)));
+        }
+      }
+      if (response.status === 429) {
+        setError("Daily word requests are temporarily limited. Please try again shortly.");
         return;
       }
-
-      if (wordOfTheDay === undefined) return;
-      const existingWord = wordOfTheDay;
-
-      const now = new Date();
-      const shouldFetchNewWord = !existingWord || 
-        !isSameDay(new Date(existingWord.updated_at), now);
-
-      if (shouldFetchNewWord) {
-        const newWordData = await fetchWordFromAPI();
-        if (!newWordData) {
-          setError("Could not fetch a new word. Please try again.");
-          return;
-        }
-
-        try {
-          await updateWordOfTheDay({
-            id: user._id,
-            word: newWordData.word,
-            phonetic: newWordData.phonetic,
-            phonetics: newWordData.phonetics,
-            meanings: newWordData.meanings,
-            updated_at: now.toISOString()
-          });
-        } catch (upsertError: any) {
-          console.error('Error storing word:', upsertError);
-          setError("Error saving word. Please try again.");
-          return;
-        }
-
-        setWordData(newWordData);
-        const audioUrl = newWordData.phonetics?.find((p: Phonetic) => p.audio)?.audio;
-        setAudioavailable(audioUrl);
-      } else {
-        // console.log(existingWord);
-        setWordData({
-          word: existingWord.word,
-          phonetic: existingWord.phonetic,
-          phonetics: existingWord.phonetics,
-          meanings: existingWord.meanings
-        });
-        const audioUrl = existingWord.phonetics?.find((p: Phonetic) => p.audio)?.audio;
-        setAudioavailable(audioUrl);
+      if (!response.ok) throw new Error(`Daily word request failed: ${response.status}`);
+      const newWordData = await response.json() as DailyWord;
+      if (!newWordData.word || !Array.isArray(newWordData.meanings) || !newWordData.meanings.length) {
+        throw new Error("Daily word response is invalid");
       }
+
+      await updateWordOfTheDay({
+        id: user._id,
+        word: newWordData.word,
+        phonetic: newWordData.phonetic ?? "",
+        phonetics: newWordData.phonetics,
+        meanings: newWordData.meanings,
+        selectionVersion: CURRENT_SELECTION_VERSION,
+        updated_at: now.toISOString(),
+      });
+      showWord(newWordData);
     } catch (error) {
-      console.error('Error in fetchWord:', error);
-      setError("An unexpected error occurred. Please try again.");
+      console.error("Error loading daily word:", error);
+      setError("Could not load a word right now. Please try again.");
     } finally {
+      pendingDay.current = null;
       setIsLoading(false);
     }
-  }, [user, userLoading, wordOfTheDay, isSameDay, fetchWordFromAPI]);
+  }, [user, userLoading, wordOfTheDay, isSameDay, showWord, updateWordOfTheDay]);
 
   useEffect(() => {
     if (!userLoading) {
-      fetchWord();
+      void loadWord();
     }
-  }, [userLoading, fetchWord]);
+  }, [userLoading, loadWord]);
 
-  const handlePlayAudio = useCallback(async () => {
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const scheduleNextDay = () => {
+      const now = new Date();
+      const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      timer = setTimeout(() => {
+        void loadWord();
+        scheduleNextDay();
+      }, nextDay.getTime() - now.getTime() + 100);
+    };
+
+    scheduleNextDay();
+    return () => clearTimeout(timer);
+  }, [loadWord]);
+
+  const handlePlayAudio = useCallback(() => {
     if (!wordData) return;
-    
+
+    const urls = [...new Set(wordData.phonetics.map((phonetic) => phonetic.audio).filter(Boolean))];
+    if (!urls.length) return;
+
     setIsPlaying(true);
-    try {
-      const audioUrl = getAudioUrl(wordData.phonetics);
-      
-      if (audioUrl) {
-        const audio = new Audio(audioUrl);
-        await audio.play();
-        audio.onended = () => setIsPlaying(false);
-      } else {
-        console.warn('No audio available for this word');
+    let nextIndex = 0;
+    const playNext = async () => {
+      if (nextIndex >= urls.length) {
         setIsPlaying(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      setIsPlaying(false);
-    }
-  }, [wordData, getAudioUrl]);
+
+      let failed = false;
+      const tryNext = () => {
+        if (failed) return;
+        failed = true;
+        void playNext();
+      };
+      try {
+        const audio = new Audio(urls[nextIndex++]);
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = tryNext;
+        await audio.play();
+      } catch {
+        tryNext();
+      }
+    };
+
+    void playNext();
+  }, [wordData]);
 
   if (error) {
     return (
       <div className="w-full bg-transparent p-[16px]">
-        <div className="flex items-center justify-center min-h-[40px]">
+        <div className="flex items-center justify-center gap-3 min-h-[40px]">
           <p className="text-[13px] font-medium text-red-500">{error}</p>
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={retryAfterSeconds > 0}
+              onClick={() => void loadWord()}
+            >
+              {retryAfterSeconds > 0 ? `Try again in ${retryAfterSeconds}s` : "Try again"}
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -231,7 +212,7 @@ export default function WordOfTheDay() {
               >
                 <RefreshCw className="h-3.5 w-3.5 text-[#1E78FF]/60" />
               </motion.div>
-              <span className="text-[13px] text-[#1E78FF]/60 font-medium tracking-[-0.2px]">Finding today's word...</span>
+              <span className="text-[13px] text-[#1E78FF]/60 font-medium tracking-[-0.2px]">Finding today&apos;s word...</span>
             </div>
           </div>
         </div>
@@ -257,8 +238,8 @@ export default function WordOfTheDay() {
               </div>
               <div className="flex items-center space-x-2">
                 <h3 className="text-[16px] font-semibold text-[#1E78FF] tracking-[-0.4px]">{wordData.word}</h3>
-                <p className="text-[13px] text-[#1E78FF]/80 italic">{wordData.phonetic}</p>
-                {Audioavailable && (
+                {wordData.phonetic && <p className="text-[13px] text-[#1E78FF]/80 italic">{wordData.phonetic}</p>}
+                {audioAvailable && (
                   <Button
                     variant="ghost"
                     size="icon"
